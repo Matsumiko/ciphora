@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default Ciphora desktop capability. No native filesystem, shell, dialog, or OS permissions are granted yet.",
+  "windows": ["main"],
+  "permissions": []
+}

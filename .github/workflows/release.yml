@@ -1,0 +1,298 @@
+name: Release Builds
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v1.3.0"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark the GitHub Release as a prerelease"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: 22
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+jobs:
+  web:
+    name: Web/PWA bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+
+      - name: Typecheck functions
+        run: npm run typecheck:functions
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Package web dist
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p release-assets
+          (cd dist && zip -qr "../release-assets/ciphora_${version}_web_dist.zip" .)
+
+      - name: Upload web release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciphora-release-web
+          path: release-assets/*
+          if-no-files-found: error
+
+  android:
+    name: Android release APK/AAB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and sync web assets
+        run: npm run mobile:sync
+
+      - name: Prepare Android release signing
+        env:
+          CIPHORA_ANDROID_KEYSTORE_BASE64: ${{ secrets.CIPHORA_ANDROID_KEYSTORE_BASE64 }}
+          CIPHORA_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEYSTORE_PASSWORD }}
+          CIPHORA_ANDROID_KEY_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in CIPHORA_ANDROID_KEYSTORE_BASE64 CIPHORA_ANDROID_KEYSTORE_PASSWORD CIPHORA_ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing GitHub secret ${name}"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          printf '%s' "$CIPHORA_ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/ciphora-android-release.p12"
+          detected_alias="$(keytool -list -storetype pkcs12 -keystore "$RUNNER_TEMP/ciphora-android-release.p12" -storepass "$CIPHORA_ANDROID_KEYSTORE_PASSWORD" 2>/dev/null | awk -F, '/PrivateKeyEntry/ {gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1; exit}')"
+          if [ -z "$detected_alias" ]; then
+            echo "::error::No PrivateKeyEntry alias found in Android release keystore"
+            exit 1
+          fi
+          echo "CIPHORA_ANDROID_KEY_ALIAS=$detected_alias" >> "$GITHUB_ENV"
+
+      - name: Derive Android version from release tag
+        id: android_version
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          if [[ ! "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([-+].*)?$ ]]; then
+            echo "::error::Release tag must be semver-like, for example v1.3.1"
+            exit 1
+          fi
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          version_code=$((10#$major * 1000000 + 10#$minor * 1000 + 10#$patch))
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$version_code" >> "$GITHUB_OUTPUT"
+
+      - name: Build release APK and release AAB
+        working-directory: android
+        env:
+          CIPHORA_ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/ciphora-android-release.p12
+          CIPHORA_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEYSTORE_PASSWORD }}
+          CIPHORA_ANDROID_KEY_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEY_PASSWORD }}
+          CIPHORA_ANDROID_KEYSTORE_TYPE: pkcs12
+          CIPHORA_ANDROID_VERSION_NAME: ${{ steps.android_version.outputs.name }}
+          CIPHORA_ANDROID_VERSION_CODE: ${{ steps.android_version.outputs.code }}
+        run: ./gradlew assembleRelease bundleRelease
+
+      - name: Package Android release assets
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p release-assets
+          cp android/app/build/outputs/apk/release/app-release.apk "release-assets/ciphora_${version}_android.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "release-assets/ciphora_${version}_android.aab"
+
+      - name: Upload Android release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciphora-release-android
+          path: release-assets/*
+          if-no-files-found: error
+
+  windows:
+    name: Windows desktop
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows desktop bundles
+        run: npm run desktop:build:windows
+
+      - name: Package Windows release assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = $env:RELEASE_TAG -replace "^v", ""
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          $msi = Get-ChildItem "src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
+          $exe = Get-ChildItem "src-tauri/target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
+          if (-not $msi) { throw "MSI bundle was not found" }
+          if (-not $exe) { throw "NSIS executable bundle was not found" }
+          Copy-Item -LiteralPath $msi.FullName -Destination "release-assets/ciphora_${version}_windows_x64.msi"
+          Copy-Item -LiteralPath $exe.FullName -Destination "release-assets/ciphora_${version}_windows_x64.exe"
+
+      - name: Upload Windows release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciphora-release-windows
+          path: release-assets/*
+          if-no-files-found: error
+
+  linux:
+    name: Linux desktop
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            patchelf \
+            rpm \
+            wget
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Linux desktop bundles
+        run: npm run desktop:build:linux
+
+      - name: Package Linux release assets
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p release-assets
+          cp "$(find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' | head -n 1)" "release-assets/ciphora_${version}_linux_x64.AppImage"
+          cp "$(find src-tauri/target/release/bundle/deb -maxdepth 1 -name '*.deb' | head -n 1)" "release-assets/ciphora_${version}_linux_x64.deb"
+          cp "$(find src-tauri/target/release/bundle/rpm -maxdepth 1 -name '*.rpm' | head -n 1)" "release-assets/ciphora_${version}_linux_x64.rpm"
+
+      - name: Upload Linux release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciphora-release-linux
+          path: release-assets/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - web
+      - android
+      - windows
+      - linux
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ciphora-release-*
+          path: release-downloads
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          cp release-downloads/* release-assets/
+          (cd release-assets && sha256sum * > SHA256SUMS.txt)
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Ciphora ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
+          body: |
+            Ciphora downloadable application builds.
+
+            Assets:
+            - `android.apk` is a release-signed Android APK for manual install/update.
+            - `android.aab` is a release-signed Android App Bundle for Play Store/internal testing tracks.
+            - Windows and Linux desktop bundles are unsigned until platform signing is configured.
+            - `web_dist.zip` is the static Cloudflare Pages/PWA build output.
+
+            Verify downloads with `SHA256SUMS.txt`.
+          files: release-assets/*

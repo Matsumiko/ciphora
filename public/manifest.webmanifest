@@ -1,0 +1,64 @@
+{
+  "id": "/",
+  "name": "Ciphora",
+  "short_name": "Ciphora",
+  "description": "Encrypted local-first vault for passwords, TOTP codes, secure notes, recovery data, and user-owned sync.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "theme_color": "#050506",
+  "background_color": "#050506",
+  "categories": ["productivity", "security", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/brand/ciphora-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Vault",
+      "short_name": "Vault",
+      "description": "Open the Ciphora vault.",
+      "url": "/vault/dashboard",
+      "icons": [
+        {
+          "src": "/pwa/192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Generator",
+      "short_name": "Generate",
+      "description": "Open Ciphora generator tools.",
+      "url": "/vault/generator",
+      "icons": [
+        {
+          "src": "/pwa/192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

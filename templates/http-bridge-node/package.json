@@ -1,0 +1,20 @@
+{
+  "name": "ciphora-http-bridge-node",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "User-owned Ciphora HTTP Bridge template for BYODB providers.",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.0",
+    "mongodb": "^7.0.0",
+    "mysql2": "^3.15.0",
+    "pg": "^8.16.0"
+  }
+}

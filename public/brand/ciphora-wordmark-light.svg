@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 128" role="img" aria-labelledby="title desc">
+  <title id="title">Ciphora wordmark light</title>
+  <desc id="desc">Ciphora gold lock shield mark with dark wordmark for light surfaces.</desc>
+  <defs>
+    <linearGradient id="gold" x1="16" y1="111" x2="96" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5A400"/>
+      <stop offset="0.5" stop-color="#FFD33D"/>
+      <stop offset="1" stop-color="#F6A800"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(7 6) scale(.9)" fill="none" stroke="url(#gold)" stroke-linejoin="miter">
+    <path d="M42 45V34C42 20.8 51.8 12 64 12s22 8.8 22 22v11" stroke-width="12" stroke-linecap="square"/>
+    <path d="M22 56l42-15 42 15v27c0 20.5-15.7 35.8-42 43-26.3-7.2-42-22.5-42-43V56Z" stroke-width="12"/>
+    <path d="M76.5 82.5A21.5 21.5 0 1 1 76.5 45.5" stroke-width="12" stroke-linecap="butt"/>
+  </g>
+  <path d="M64.6 67.7a6.8 6.8 0 1 0-4.9 11.5l-3 13.7h15.7l-3-13.7a6.8 6.8 0 0 0-4.8-11.5Z" fill="url(#gold)"/>
+  <path d="M64.6 43.9V61M64.6 90.1v25.2" stroke="#ffffff" stroke-width="3.6" stroke-linecap="square"/>
+  <text x="139" y="87" fill="#14181f" font-family="Space Grotesk, Inter, ui-sans-serif, system-ui, sans-serif" font-size="74" font-weight="800" letter-spacing="-3.5">Ciphora</text>
+  <rect x="185.25" y="34" width="13" height="13" rx="3" fill="#F5B301"/>
+</svg>

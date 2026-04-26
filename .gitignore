@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+.wrangler
+cloudflare.env
+wrangler.toml
+*.zip
+*.local
+.env
+.env.*
+!.env.example
+*.secret
+*.jks
+*.keystore
+*.p12
+*.pfx
+secrets/
+
+# Native build outputs
+src-tauri/target
+src-tauri/gen
+android/.gradle
+android/build
+android/app/build
+android/app/src/main/assets/public
+android/local.properties
+android/captures
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

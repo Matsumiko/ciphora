@@ -1,0 +1,85 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "android/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and sync web assets
+        run: npm run mobile:sync
+
+      - name: Prepare Android release signing
+        env:
+          CIPHORA_ANDROID_KEYSTORE_BASE64: ${{ secrets.CIPHORA_ANDROID_KEYSTORE_BASE64 }}
+          CIPHORA_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEYSTORE_PASSWORD }}
+          CIPHORA_ANDROID_KEY_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in CIPHORA_ANDROID_KEYSTORE_BASE64 CIPHORA_ANDROID_KEYSTORE_PASSWORD CIPHORA_ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing GitHub secret ${name}"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          printf '%s' "$CIPHORA_ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/ciphora-android-release.p12"
+          detected_alias="$(keytool -list -storetype pkcs12 -keystore "$RUNNER_TEMP/ciphora-android-release.p12" -storepass "$CIPHORA_ANDROID_KEYSTORE_PASSWORD" 2>/dev/null | awk -F, '/PrivateKeyEntry/ {gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1; exit}')"
+          if [ -z "$detected_alias" ]; then
+            echo "::error::No PrivateKeyEntry alias found in Android release keystore"
+            exit 1
+          fi
+          echo "CIPHORA_ANDROID_KEY_ALIAS=$detected_alias" >> "$GITHUB_ENV"
+
+      - name: Build release APK and release AAB
+        working-directory: android
+        env:
+          CIPHORA_ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/ciphora-android-release.p12
+          CIPHORA_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEYSTORE_PASSWORD }}
+          CIPHORA_ANDROID_KEY_PASSWORD: ${{ secrets.CIPHORA_ANDROID_KEY_PASSWORD }}
+          CIPHORA_ANDROID_KEYSTORE_TYPE: pkcs12
+        run: ./gradlew assembleRelease bundleRelease
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciphora-android-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

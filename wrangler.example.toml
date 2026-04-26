@@ -1,0 +1,63 @@
+name = "ciphora"
+compatibility_date = "2026-04-23"
+pages_build_output_dir = "dist"
+
+[vars]
+CIPHORA_ENV = "production"
+CIPHORA_APP_URL = "https://your-ciphora-domain.example"
+CIPHORA_EMAIL_FROM = "Ciphora <noreply@your-ciphora-domain.example>"
+CIPHORA_EMAIL_PROVIDER_WEIGHTS = "brevo:3,resend:1"
+CIPHORA_EMAIL_PROVIDER_DAILY_LIMITS = "brevo:300,resend:100"
+
+# Copy this file to wrangler.toml and replace all database IDs with your own
+# Cloudflare D1 resources before deploying Pages Functions.
+
+[[d1_databases]]
+binding = "CIPHORA_DIRECTORY"
+database_name = "ciphora_directory"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_00"
+database_name = "ciphora_identity_00"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_01"
+database_name = "ciphora_identity_01"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_02"
+database_name = "ciphora_identity_02"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_03"
+database_name = "ciphora_identity_03"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_04"
+database_name = "ciphora_identity_04"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_05"
+database_name = "ciphora_identity_05"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_06"
+database_name = "ciphora_identity_06"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_IDENTITY_07"
+database_name = "ciphora_identity_07"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[d1_databases]]
+binding = "CIPHORA_OPS_RUNTIME"
+database_name = "ciphora_ops_runtime"
+database_id = "00000000-0000-0000-0000-000000000000"

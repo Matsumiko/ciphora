@@ -1,0 +1,5 @@
+{
+  "default": "../public/brand/ciphora-mark-android.svg",
+  "bg_color": "#050506",
+  "android_fg_scale": 60
+}
