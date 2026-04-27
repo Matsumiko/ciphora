@@ -27,6 +27,9 @@ import {
   WifiHigh,
   Lifebuoy,
   Certificate,
+  EnvelopeSimple,
+  Bank,
+  Cloud,
 } from "@phosphor-icons/react";
 import { APP_NAME } from "../lib/app-config";
 import type { VaultActivity } from "../lib/vault-storage";
@@ -80,6 +83,11 @@ const typeColors: Record<string, string> = {
   recoveryCode: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25",
   softwareLicense: "bg-lime-500/10 text-lime-400 border border-lime-500/25",
   databaseCredential: "bg-indigo-500/10 text-indigo-400 border border-indigo-500/25",
+  emailAccount: "bg-rose-500/10 text-rose-400 border border-rose-500/25",
+  bankAccount: "bg-teal-500/10 text-teal-400 border border-teal-500/25",
+  cryptoWallet: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/25",
+  domainDns: "bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/25",
+  serverHosting: "bg-slate-500/10 text-slate-400 border border-slate-500/25",
 };
 
 const strengthColors: Record<string, string> = {
@@ -103,6 +111,11 @@ interface DashboardProps {
   recoveryCodes: VaultItem[];
   softwareLicenses: VaultItem[];
   databaseCredentials: VaultItem[];
+  emailAccounts: VaultItem[];
+  bankAccounts: VaultItem[];
+  cryptoWallets: VaultItem[];
+  domainDnsRecords: VaultItem[];
+  serverHostingAccounts: VaultItem[];
   activities: VaultActivity[];
   autoLockSeconds: number;
   autoLockDurationSeconds?: number | null;
@@ -124,6 +137,11 @@ export default function VaultDashboard({
   recoveryCodes,
   softwareLicenses,
   databaseCredentials,
+  emailAccounts,
+  bankAccounts,
+  cryptoWallets,
+  domainDnsRecords,
+  serverHostingAccounts,
   activities,
   autoLockSeconds,
   autoLockDurationSeconds = autoLockSeconds,
@@ -145,7 +163,7 @@ export default function VaultDashboard({
     setTimeout(() => setCopiedItem(null), 1800);
   };
 
-  const totalItems = passwords.length + totps.length + notes.length + cards.length + sshKeys.length + identities.length + apiKeys.length + wifiNetworks.length + recoveryCodes.length + softwareLicenses.length + databaseCredentials.length;
+  const totalItems = passwords.length + totps.length + notes.length + cards.length + sshKeys.length + identities.length + apiKeys.length + wifiNetworks.length + recoveryCodes.length + softwareLicenses.length + databaseCredentials.length + emailAccounts.length + bankAccounts.length + cryptoWallets.length + domainDnsRecords.length + serverHostingAccounts.length;
   const weakPasswords = passwords.filter(p => p.strength === "weak").length;
   const expiringCards = cards.filter(c => {
     if (!c.expiry) return false;
@@ -210,6 +228,11 @@ export default function VaultDashboard({
     ...recoveryCodes.slice(0, 1).map(r => ({ id: r.id, type: "recoveryCode" as const, name: r.recoveryName ?? "Recovery Codes", user: r.recoveryService ?? r.recoveryAccount ?? "", favicon: "RC", ago: r.updatedAt ?? "recently", strength: null, copyValue: r.recoveryCodes ?? "" })),
     ...softwareLicenses.slice(0, 1).map(l => ({ id: l.id, type: "softwareLicense" as const, name: l.softwareName ?? "Software License", user: l.softwareVendor ?? l.licenseEmail ?? "", favicon: "SL", ago: l.updatedAt ?? "recently", strength: null, copyValue: l.licenseKey ?? "" })),
     ...databaseCredentials.slice(0, 1).map(d => ({ id: d.id, type: "databaseCredential" as const, name: d.dbName ?? "Database Credential", user: d.dbHost ?? d.dbDatabase ?? d.dbEngine ?? "", favicon: "DB", ago: d.updatedAt ?? "recently", strength: null, copyValue: d.dbConnectionUrl ?? d.dbPassword ?? "" })),
+    ...emailAccounts.slice(0, 1).map(e => ({ id: e.id, type: "emailAccount" as const, name: e.emailAccountName ?? e.emailAddress ?? "Email Account", user: e.emailAddress ?? e.emailProvider ?? "", favicon: "EM", ago: e.updatedAt ?? "recently", strength: null, copyValue: e.emailAddress ?? e.emailPassword ?? "" })),
+    ...bankAccounts.slice(0, 1).map(b => ({ id: b.id, type: "bankAccount" as const, name: b.bankLabel ?? b.bankName ?? "Bank Account", user: b.bankName ?? b.bankAccountHolder ?? "", favicon: "BK", ago: b.updatedAt ?? "recently", strength: null, copyValue: b.bankAccountNumber ?? b.bankIban ?? "" })),
+    ...cryptoWallets.slice(0, 1).map(c => ({ id: c.id, type: "cryptoWallet" as const, name: c.cryptoWalletName ?? "Crypto Wallet", user: c.cryptoNetwork ?? c.cryptoPublicAddress ?? "", favicon: "CW", ago: c.updatedAt ?? "recently", strength: null, copyValue: c.cryptoPublicAddress ?? "" })),
+    ...domainDnsRecords.slice(0, 1).map(d => ({ id: d.id, type: "domainDns" as const, name: d.domainName ?? "Domain / DNS", user: d.domainRegistrar ?? d.domainDnsProvider ?? "", favicon: "DN", ago: d.updatedAt ?? "recently", strength: null, copyValue: d.domainName ?? d.domainEppCode ?? "" })),
+    ...serverHostingAccounts.slice(0, 1).map(s => ({ id: s.id, type: "serverHosting" as const, name: s.serverName ?? "Server / Hosting", user: s.serverHost ?? s.serverIp ?? s.serverProvider ?? "", favicon: "SV", ago: s.updatedAt ?? "recently", strength: null, copyValue: s.serverHost ?? s.serverPanelUrl ?? "" })),
   ].slice(0, 6);
 
   const metricCards = [
@@ -218,8 +241,10 @@ export default function VaultDashboard({
     { id: "notes", label: "Secure Notes", value: notes.length, icon: Note, status: "nominal", sub: "Encrypted locally", color: "border-l-neutral-700" },
     { id: "cards", label: "Credit Cards", value: cards.length, icon: CreditCard, status: expiringCards > 0 ? "warning" : "nominal", sub: expiringCards > 0 ? `${expiringCards} expiring soon` : "All valid", color: "border-l-amber-400" },
     { id: "dev-secrets", label: "Dev Secrets", value: sshKeys.length + apiKeys.length, icon: Code, status: "nominal", sub: "SSH and API keys", color: "border-l-cyan-500/60" },
-    { id: "identity-wifi", label: "Identity / Wi-Fi", value: identities.length + wifiNetworks.length, icon: WifiHigh, status: "nominal", sub: "Profiles and networks", color: "border-l-sky-500/60" },
+    { id: "identity-wifi", label: "Identity / Wi-Fi", value: identities.length + wifiNetworks.length + emailAccounts.length, icon: EnvelopeSimple, status: "nominal", sub: "Profiles, mail, networks", color: "border-l-sky-500/60" },
     { id: "ops-access", label: "Ops Access", value: recoveryCodes.length + softwareLicenses.length + databaseCredentials.length, icon: Database, status: "nominal", sub: "Recovery, license, database", color: "border-l-indigo-500/60" },
+    { id: "finance-domain", label: "Finance / Domain", value: bankAccounts.length + cryptoWallets.length + domainDnsRecords.length, icon: Bank, status: "nominal", sub: "Bank, wallet, DNS", color: "border-l-teal-500/60" },
+    { id: "servers", label: "Servers", value: serverHostingAccounts.length, icon: Cloud, status: "nominal", sub: "Hosting inventory", color: "border-l-slate-500/60" },
     { id: "export", label: "Backup Export", value: "Manual", icon: HardDrive, status: "nominal", sub: "Encrypted JSON export", color: "border-l-neutral-700" },
     { id: "autolock", label: "Auto-Lock", value: autoLockDisplay, icon: Lock, status: isWarning ? "warning" : "active", sub: autoLockDisabled ? "Disabled" : isWarning ? "Locking soon!" : "Session active", color: isWarning ? "border-l-red-400" : "border-l-emerald-500/60" },
   ];

@@ -13,6 +13,10 @@ import {
   Lifebuoy,
   Certificate,
   Database,
+  Bank,
+  CurrencyBtc,
+  Globe,
+  Cloud,
 } from "@phosphor-icons/react";
 import { APP_NAME } from "../lib/app-config";
 import type { VaultItem } from "./ItemModal";
@@ -23,6 +27,10 @@ interface SecurityAuditProps {
   recoveryCodes: VaultItem[];
   softwareLicenses: VaultItem[];
   databaseCredentials: VaultItem[];
+  bankAccounts: VaultItem[];
+  cryptoWallets: VaultItem[];
+  domainDnsRecords: VaultItem[];
+  serverHostingAccounts: VaultItem[];
   onEditItem: (item: VaultItem) => void;
   onDeleteItem: (id: number, type: string, name: string) => void;
   onNavigate: (id: string) => void;
@@ -33,9 +41,15 @@ type DatabasePrivilegeIssue = {
   item: VaultItem;
   reason: string;
 };
+type DomainIssue = VaultItem & { _tag: "expired" | "expiring" };
+type ServerAccessIssue = {
+  item: VaultItem;
+  reason: string;
+};
 
 const RECOVERY_STALE_DAYS = 180;
 const LICENSE_EXPIRING_DAYS = 30;
+const DOMAIN_EXPIRING_DAYS = 30;
 const PRIVILEGED_DB_USERS = new Set([
   "root",
   "admin",
@@ -65,6 +79,13 @@ const PRIVILEGED_DB_NOTE_PATTERNS = [
   "drop table",
   "production admin",
 ];
+const PRIVILEGED_SERVER_USERS = new Set([
+  "root",
+  "admin",
+  "administrator",
+  "ubuntu",
+  "ec2-user",
+]);
 
 function CopyBtn({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -129,6 +150,10 @@ function getLicenseExpiry(item: VaultItem): Date | null {
   return parseDateLike(item.licenseExpiry);
 }
 
+function getDomainExpiry(item: VaultItem): Date | null {
+  return parseDateLike(item.domainExpires);
+}
+
 function extractConnectionUrlUsername(value?: string): string {
   if (!value) return "";
   try {
@@ -163,7 +188,21 @@ function getDatabasePrivilegeReason(item: VaultItem): string | null {
   return null;
 }
 
-export default function SecurityAudit({ passwords, cards, recoveryCodes, softwareLicenses, databaseCredentials, onEditItem, onDeleteItem, onNavigate }: SecurityAuditProps) {
+function getServerAccessReason(item: VaultItem): string | null {
+  const username = normalizeDbPrincipal(item.serverUsername);
+  if (username && (PRIVILEGED_SERVER_USERS.has(username) || username.includes("admin"))) {
+    return `Privileged login user: ${username}`;
+  }
+
+  const notes = item.serverNotes?.toLowerCase() ?? "";
+  if (notes.includes("root") || notes.includes("full access") || notes.includes("sudo")) {
+    return "Notes mention root, sudo, or full access";
+  }
+
+  return null;
+}
+
+export default function SecurityAudit({ passwords, cards, recoveryCodes, softwareLicenses, databaseCredentials, bankAccounts, cryptoWallets, domainDnsRecords, serverHostingAccounts, onEditItem, onDeleteItem, onNavigate }: SecurityAuditProps) {
   const weakPasswords = useMemo(
     () => passwords.filter(p => p.strength === "weak"),
     [passwords]
@@ -235,6 +274,44 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
     [databaseCredentials]
   );
 
+  const bankPinIssues = useMemo(
+    () => bankAccounts.filter((item) => item.bankPin?.trim()),
+    [bankAccounts]
+  );
+
+  const cryptoSeedReviews = useMemo(
+    () => cryptoWallets.filter((item) => {
+      const hasSeedMaterial = !!item.cryptoSeedPhrase?.trim() || !!item.cryptoPrivateKey?.trim();
+      return hasSeedMaterial && item.cryptoHardwareWallet !== "Yes";
+    }),
+    [cryptoWallets]
+  );
+
+  const expiredDomains = useMemo(() => {
+    const now = new Date();
+    return domainDnsRecords.filter((item) => {
+      const expiry = getDomainExpiry(item);
+      return expiry ? expiry < now : false;
+    });
+  }, [domainDnsRecords]);
+
+  const expiringDomains = useMemo(() => {
+    const now = new Date();
+    return domainDnsRecords.filter((item) => {
+      const expiry = getDomainExpiry(item);
+      if (!expiry || expiry < now) return false;
+      const diffDays = daysBetween(now, expiry);
+      return diffDays >= 0 && diffDays <= DOMAIN_EXPIRING_DAYS;
+    });
+  }, [domainDnsRecords]);
+
+  const privilegedServerAccounts = useMemo<ServerAccessIssue[]>(
+    () => serverHostingAccounts
+      .map((item) => ({ item, reason: getServerAccessReason(item) }))
+      .filter((issue): issue is ServerAccessIssue => Boolean(issue.reason)),
+    [serverHostingAccounts]
+  );
+
   // Security score: start 100, deduct per issue
   const score = Math.max(0, Math.min(100,
     100
@@ -246,6 +323,11 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
     - expiredLicenses.length * 12
     - expiringLicenses.length * 4
     - privilegedDatabaseCredentials.length * 12
+    - bankPinIssues.length * 8
+    - cryptoSeedReviews.length * 10
+    - expiredDomains.length * 15
+    - expiringDomains.length * 5
+    - privilegedServerAccounts.length * 10
   ));
   const { label: scoreText, color: scoreColor } = scoreLabel(score);
 
@@ -256,7 +338,12 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
     + staleRecoveryCodes.length
     + expiredLicenses.length
     + expiringLicenses.length
-    + privilegedDatabaseCredentials.length;
+    + privilegedDatabaseCredentials.length
+    + bankPinIssues.length
+    + cryptoSeedReviews.length
+    + expiredDomains.length
+    + expiringDomains.length
+    + privilegedServerAccounts.length;
 
   return (
     <section className="bg-background min-h-screen text-foreground">
@@ -269,7 +356,7 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
           <div>
             <p className="text-xs font-mono text-muted-foreground tracking-widest uppercase mb-1">{APP_NAME} - Security Audit</p>
             <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Security Audit</h1>
-            <p className="text-sm text-muted-foreground mt-1">Identify weak credentials, stale recovery material, expired licenses, and risky database access.</p>
+            <p className="text-sm text-muted-foreground mt-1">Identify weak credentials, stale recovery material, expired domains, and risky privileged access.</p>
           </div>
           <div className="shrink-0 text-right">
             <div className={`text-4xl font-heading font-bold ${scoreColor}`}>{score}</div>
@@ -319,6 +406,22 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
               <div className="w-2 h-2 rounded-full bg-indigo-500" />
               <span className="text-[11px] font-mono text-muted-foreground">{privilegedDatabaseCredentials.length} privileged DB</span>
             </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-teal-500" />
+              <span className="text-[11px] font-mono text-muted-foreground">{bankPinIssues.length} bank PIN</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span className="text-[11px] font-mono text-muted-foreground">{cryptoSeedReviews.length} crypto review</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-fuchsia-500" />
+              <span className="text-[11px] font-mono text-muted-foreground">{expiredDomains.length + expiringDomains.length} domain issue{expiredDomains.length + expiringDomains.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-slate-500" />
+              <span className="text-[11px] font-mono text-muted-foreground">{privilegedServerAccounts.length} server admin</span>
+            </div>
           </div>
         </div>
 
@@ -328,7 +431,7 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
             <CheckCircle weight="duotone" size={32} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
               <p className="font-heading font-semibold text-emerald-700 dark:text-emerald-400">No issues found!</p>
-              <p className="text-sm text-emerald-700/80 dark:text-emerald-600 font-mono mt-0.5">Passwords, cards, recovery codes, licenses, and database credentials have no heuristic issues.</p>
+              <p className="text-sm text-emerald-700/80 dark:text-emerald-600 font-mono mt-0.5">Passwords, cards, recovery codes, licenses, domains, bank accounts, crypto wallets, databases, and servers have no heuristic issues.</p>
             </div>
           </div>
         )}
@@ -577,6 +680,164 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
           </div>
         )}
 
+        {/* Bank PIN issues */}
+        {bankPinIssues.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Bank weight="duotone" size={16} className="text-teal-600 dark:text-teal-400" />
+              <span className="text-sm font-heading font-semibold text-foreground">Bank Account Secret Review</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-mono text-teal-600 dark:text-teal-400">{bankPinIssues.length} issue{bankPinIssues.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="bg-teal-500/10 border border-teal-200 dark:bg-teal-950/20 dark:border-teal-900/40 rounded-sm px-3 py-2 mb-3 flex items-start gap-2">
+              <ShieldWarning weight="duotone" size={13} className="text-teal-700 dark:text-teal-400 shrink-0 mt-0.5" />
+              <p className="text-xs font-mono text-teal-800/80 dark:text-teal-400/80">Stored bank PINs or access codes are high-risk. Keep them only when unavoidable and rotate after exposure.</p>
+            </div>
+            <div className="space-y-2">
+              {bankPinIssues.map((item, idx) => (
+                <div key={item.id} style={{ animationDelay: `${idx * 0.06}s` }} className="animate-fade-in-up bg-card border border-teal-200 dark:border-teal-900/30 rounded-sm px-4 py-3 flex items-center gap-3 group card-hover">
+                  <div className="w-8 h-8 bg-muted rounded-sm flex items-center justify-center shrink-0">
+                    <Bank size={14} weight="duotone" className="text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{item.bankLabel ?? item.bankName ?? "Bank Account"}</span>
+                      <span className="text-[10px] font-mono text-teal-700 bg-teal-500/10 px-1.5 py-0.5 rounded-sm border border-teal-200 dark:text-teal-400 dark:bg-teal-950/40 dark:border-teal-900/50">PIN STORED</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">{[item.bankName, item.bankAccountHolder].filter(Boolean).join(" - ") || "Bank details"}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => onEditItem(item)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150">
+                      <PencilSimple size={13} weight="duotone" />
+                    </button>
+                    <button onClick={() => onDeleteItem(item.id, item.type, item.bankLabel ?? "Bank Account")} className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all duration-150">
+                      <Trash size={13} weight="duotone" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Crypto wallet reviews */}
+        {cryptoSeedReviews.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <CurrencyBtc weight="duotone" size={16} className="text-yellow-600 dark:text-yellow-400" />
+              <span className="text-sm font-heading font-semibold text-foreground">Crypto Wallet Seed Review</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-mono text-yellow-600 dark:text-yellow-400">{cryptoSeedReviews.length} review{cryptoSeedReviews.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-900/40 rounded-sm px-3 py-2 mb-3 flex items-start gap-2">
+              <Warning weight="duotone" size={13} className="text-yellow-700 dark:text-yellow-400 shrink-0 mt-0.5" />
+              <p className="text-xs font-mono text-yellow-800/80 dark:text-yellow-400/80">Seed phrases or private keys without a hardware-wallet marker deserve extra review. Ciphora never displays the secret in audit rows.</p>
+            </div>
+            <div className="space-y-2">
+              {cryptoSeedReviews.map((item, idx) => (
+                <div key={item.id} style={{ animationDelay: `${idx * 0.06}s` }} className="animate-fade-in-up bg-card border border-yellow-200 dark:border-yellow-900/30 rounded-sm px-4 py-3 flex items-center gap-3 group card-hover">
+                  <div className="w-8 h-8 bg-muted rounded-sm flex items-center justify-center shrink-0">
+                    <CurrencyBtc size={14} weight="duotone" className="text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{item.cryptoWalletName ?? "Crypto Wallet"}</span>
+                      <span className="text-[10px] font-mono text-yellow-700 bg-yellow-500/10 px-1.5 py-0.5 rounded-sm border border-yellow-200 dark:text-yellow-400 dark:bg-yellow-950/40 dark:border-yellow-900/50">SEED REVIEW</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">{[item.cryptoNetwork, item.cryptoHardwareWallet].filter(Boolean).join(" - ") || "Seed/private key material"}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => onEditItem(item)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150">
+                      <PencilSimple size={13} weight="duotone" />
+                    </button>
+                    <button onClick={() => onDeleteItem(item.id, item.type, item.cryptoWalletName ?? "Crypto Wallet")} className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all duration-150">
+                      <Trash size={13} weight="duotone" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Domain issues */}
+        {(expiredDomains.length > 0 || expiringDomains.length > 0) && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Globe weight="duotone" size={16} className="text-fuchsia-600 dark:text-fuchsia-400" />
+              <span className="text-sm font-heading font-semibold text-foreground">Domain Expiry Issues</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-mono text-fuchsia-600 dark:text-fuchsia-400">{expiredDomains.length + expiringDomains.length} issue{expiredDomains.length + expiringDomains.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="space-y-2">
+              {([
+                ...expiredDomains.map((item) => ({ ...item, _tag: "expired" as const })),
+                ...expiringDomains.map((item) => ({ ...item, _tag: "expiring" as const })),
+              ] satisfies DomainIssue[]).map((item) => (
+                <div key={`${item._tag}-${item.id}`} className={`bg-card border rounded-sm px-4 py-3 flex items-center gap-3 group ${item._tag === "expired" ? "border-red-200 dark:border-red-900/40" : "border-fuchsia-200 dark:border-fuchsia-900/40"}`}>
+                  <div className="w-8 h-8 bg-muted rounded-sm flex items-center justify-center shrink-0">
+                    <Globe size={14} weight="duotone" className="text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{item.domainName ?? "Domain"}</span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-sm border ${item._tag === "expired" ? "text-red-700 bg-red-500/10 border-red-200 dark:text-red-400 dark:bg-red-950/40 dark:border-red-900/50" : "text-fuchsia-700 bg-fuchsia-500/10 border-fuchsia-200 dark:text-fuchsia-400 dark:bg-fuchsia-950/40 dark:border-fuchsia-900/50"}`}>
+                        {item._tag === "expired" ? "EXPIRED" : "EXPIRING SOON"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">{[item.domainRegistrar, item.domainDnsProvider].filter(Boolean).join(" - ") || "Domain"} - Exp {item.domainExpires}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => onEditItem(item)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150">
+                      <PencilSimple size={13} weight="duotone" />
+                    </button>
+                    <button onClick={() => onDeleteItem(item.id, item.type, item.domainName ?? "Domain")} className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all duration-150">
+                      <Trash size={13} weight="duotone" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Server privileged access issues */}
+        {privilegedServerAccounts.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Cloud weight="duotone" size={16} className="text-slate-600 dark:text-slate-400" />
+              <span className="text-sm font-heading font-semibold text-foreground">Server Privilege Review</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-mono text-slate-600 dark:text-slate-400">{privilegedServerAccounts.length} issue{privilegedServerAccounts.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="space-y-2">
+              {privilegedServerAccounts.map(({ item, reason }, idx) => (
+                <div key={item.id} style={{ animationDelay: `${idx * 0.06}s` }} className="animate-fade-in-up bg-card border border-slate-200 dark:border-slate-800 rounded-sm px-4 py-3 flex items-center gap-3 group card-hover">
+                  <div className="w-8 h-8 bg-muted rounded-sm flex items-center justify-center shrink-0">
+                    <Cloud size={14} weight="duotone" className="text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{item.serverName ?? "Server / Hosting"}</span>
+                      <span className="text-[10px] font-mono text-slate-700 bg-slate-500/10 px-1.5 py-0.5 rounded-sm border border-slate-200 dark:text-slate-400 dark:bg-slate-950/40 dark:border-slate-800">PRIVILEGED</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">{[item.serverProvider, item.serverHost || item.serverIp, item.serverUsername].filter(Boolean).join(" - ") || "Server access"}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">{reason}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => onEditItem(item)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150">
+                      <PencilSimple size={13} weight="duotone" />
+                    </button>
+                    <button onClick={() => onDeleteItem(item.id, item.type, item.serverName ?? "Server / Hosting")} className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all duration-150">
+                      <Trash size={13} weight="duotone" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Improvement tips */}
         <div className="bg-card border border-border rounded-sm p-5">
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-4">Improvement Tips</p>
@@ -588,6 +849,10 @@ export default function SecurityAudit({ passwords, cards, recoveryCodes, softwar
               { icon: Lifebuoy, tip: `Rotate Recovery Codes at least every ${RECOVERY_STALE_DAYS} days or after account/device risk changes.`, done: staleRecoveryCodes.length === 0 },
               { icon: Certificate, tip: "Renew expired software licenses or mark lifetime licenses clearly.", done: expiredLicenses.length === 0 && expiringLicenses.length === 0 },
               { icon: Database, tip: "Replace root/admin database users with scoped read-only or task-specific credentials.", done: privilegedDatabaseCredentials.length === 0 },
+              { icon: Bank, tip: "Avoid storing bank PINs unless there is no safer recovery process.", done: bankPinIssues.length === 0 },
+              { icon: CurrencyBtc, tip: "Prefer offline or hardware-wallet backups for crypto seed phrases and private keys.", done: cryptoSeedReviews.length === 0 },
+              { icon: Globe, tip: `Renew domains before the last ${DOMAIN_EXPIRING_DAYS} days to avoid DNS or service takeover risk.`, done: expiredDomains.length === 0 && expiringDomains.length === 0 },
+              { icon: Cloud, tip: "Replace root/admin server logins with scoped deploy users where possible.", done: privilegedServerAccounts.length === 0 },
             ].map(({ icon: Icon, tip, done }, i) => (
               <div key={i} className="flex items-start gap-3">
                 <div className={`w-6 h-6 rounded-sm flex items-center justify-center shrink-0 mt-0.5 border ${done ? "bg-emerald-500/[0.12] border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800/60" : "bg-muted border-border"}`}>

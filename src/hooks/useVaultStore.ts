@@ -36,6 +36,11 @@ function isVaultType(value: unknown): value is VaultItem["type"] {
     || value === "recoveryCode"
     || value === "softwareLicense"
     || value === "databaseCredential"
+    || value === "emailAccount"
+    || value === "bankAccount"
+    || value === "cryptoWallet"
+    || value === "domainDns"
+    || value === "serverHosting"
   );
 }
 
@@ -114,6 +119,53 @@ function sanitizeVaultItem(item: Partial<VaultItem>): VaultItem {
     dbPassword: item.dbPassword,
     dbConnectionUrl: item.dbConnectionUrl,
     dbNotes: item.dbNotes,
+    emailAccountName: item.emailAccountName,
+    emailAddress: item.emailAddress,
+    emailProvider: item.emailProvider,
+    emailUsername: item.emailUsername,
+    emailPassword: item.emailPassword,
+    emailRecoveryEmail: item.emailRecoveryEmail,
+    emailRecoveryPhone: item.emailRecoveryPhone,
+    emailImapHost: item.emailImapHost,
+    emailSmtpHost: item.emailSmtpHost,
+    emailNotes: item.emailNotes,
+    bankLabel: item.bankLabel,
+    bankName: item.bankName,
+    bankAccountHolder: item.bankAccountHolder,
+    bankAccountNumber: item.bankAccountNumber,
+    bankRoutingNumber: item.bankRoutingNumber,
+    bankSwift: item.bankSwift,
+    bankIban: item.bankIban,
+    bankBranch: item.bankBranch,
+    bankPin: item.bankPin,
+    bankLoginUrl: item.bankLoginUrl,
+    bankNotes: item.bankNotes,
+    cryptoWalletName: item.cryptoWalletName,
+    cryptoNetwork: item.cryptoNetwork,
+    cryptoPublicAddress: item.cryptoPublicAddress,
+    cryptoSeedPhrase: item.cryptoSeedPhrase,
+    cryptoPrivateKey: item.cryptoPrivateKey,
+    cryptoDerivationPath: item.cryptoDerivationPath,
+    cryptoHardwareWallet: item.cryptoHardwareWallet,
+    cryptoNotes: item.cryptoNotes,
+    domainName: item.domainName,
+    domainRegistrar: item.domainRegistrar,
+    domainDnsProvider: item.domainDnsProvider,
+    domainNameservers: item.domainNameservers,
+    domainExpires: item.domainExpires,
+    domainRenewalEmail: item.domainRenewalEmail,
+    domainEppCode: item.domainEppCode,
+    domainNotes: item.domainNotes,
+    serverName: item.serverName,
+    serverProvider: item.serverProvider,
+    serverHost: item.serverHost,
+    serverIp: item.serverIp,
+    serverUsername: item.serverUsername,
+    serverPassword: item.serverPassword,
+    serverPanelUrl: item.serverPanelUrl,
+    serverSshReference: item.serverSshReference,
+    serverExpires: item.serverExpires,
+    serverNotes: item.serverNotes,
   };
 }
 
@@ -137,7 +189,7 @@ function applyMutationMetadata(item: VaultItem, timestamp: string): VaultItem {
   return {
     ...item,
     modifiedAt: timestamp,
-    updatedAt: item.type === "note" || item.type === "ssh" || item.type === "identity" || item.type === "apiKey" || item.type === "wifi" || item.type === "recoveryCode" || item.type === "softwareLicense" || item.type === "databaseCredential" ? "just now" : item.updatedAt,
+    updatedAt: item.type === "note" || item.type === "ssh" || item.type === "identity" || item.type === "apiKey" || item.type === "wifi" || item.type === "recoveryCode" || item.type === "softwareLicense" || item.type === "databaseCredential" || item.type === "emailAccount" || item.type === "bankAccount" || item.type === "cryptoWallet" || item.type === "domainDns" || item.type === "serverHosting" ? "just now" : item.updatedAt,
   };
 }
 

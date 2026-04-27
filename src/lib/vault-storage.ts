@@ -868,6 +868,11 @@ export async function parseImportedVaultFile(rawText: string): Promise<
       ...(nested.recoveryCodes ?? []),
       ...(nested.softwareLicenses ?? []),
       ...(nested.databaseCredentials ?? []),
+      ...(nested.emailAccounts ?? []),
+      ...(nested.bankAccounts ?? []),
+      ...(nested.cryptoWallets ?? []),
+      ...(nested.domainDnsRecords ?? []),
+      ...(nested.serverHostingAccounts ?? []),
     ];
   } else {
     throw new Error("Unsupported vault file format.");

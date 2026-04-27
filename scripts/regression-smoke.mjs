@@ -86,7 +86,7 @@ Options:
   --include-legacy-upgrade-write Also create a disposable legacy verifier account and upgrade it to OPAQUE.
   --cleanup-stateful-accounts Cleanup disposable .example.invalid accounts created by stateful write checks.
   --cleanup-env-file <path>   Cloudflare env file for cleanup. Default: .env.cloudflare.local
-  --cleanup-owner-env-file <path> Owner secret env file for auth-secret-derived cleanup hashes.
+  --cleanup-owner-env-file <path> Owner env file for auth-secret-derived cleanup hashes. Default: .env.owner.local
   --cleanup-client-ip <ip>    Also cleanup rate-limit buckets for this client IP when cleanup runs.
   --turso-url <url>           Optional BYODB Turso URL for read-only provider ping.
   --turso-token <token>       Optional BYODB Turso token for read-only provider ping.
@@ -1431,6 +1431,55 @@ async function assertExpandedVaultItemTypes(client, baseUrl) {
     expectedTitle: "Regression Database",
   });
 
+  await createItem({
+    typeLabel: "Email",
+    fields: {
+      "e.g. Personal Gmail": "Regression Email Account",
+      "you@example.com": "regression-email@example.invalid",
+      "Email or app password": "regression-email-password",
+    },
+    expectedTitle: "Regression Email Account",
+  });
+
+  await createItem({
+    typeLabel: "Bank",
+    fields: {
+      "e.g. Payroll Account": "Regression Bank Account",
+      "Bank name": "Regression Bank",
+      "Account number": "000111222333",
+      "Optional high-risk secret": "123456",
+    },
+    expectedTitle: "Regression Bank Account",
+  });
+
+  await createItem({
+    typeLabel: "Crypto",
+    fields: {
+      "e.g. Ledger ETH Wallet": "Regression Crypto Wallet",
+      "12 or 24 word seed phrase": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    },
+    expectedTitle: "Regression Crypto Wallet",
+  });
+
+  await createItem({
+    typeLabel: "Domain",
+    fields: {
+      "example.com": "regression.example.invalid",
+      "YYYY-MM-DD": "2024-01-01",
+    },
+    expectedTitle: "regression.example.invalid",
+  });
+
+  await createItem({
+    typeLabel: "Server",
+    fields: {
+      "e.g. Production VPS": "Regression Server",
+      "server.example.com": "server-regression.example.invalid",
+      "root, deploy, admin": "root",
+    },
+    expectedTitle: "Regression Server",
+  });
+
   const libraryState = await client.evaluate(`(() => {
     const text = document.body.innerText;
     const normalizedText = text.toLowerCase();
@@ -1442,6 +1491,11 @@ async function assertExpandedVaultItemTypes(client, baseUrl) {
       hasRecoverySection: normalizedText.includes("recovery codes"),
       hasLicenseSection: normalizedText.includes("software licenses"),
       hasDatabaseSection: normalizedText.includes("database credentials"),
+      hasEmailSection: normalizedText.includes("email accounts"),
+      hasBankSection: normalizedText.includes("bank accounts"),
+      hasCryptoSection: normalizedText.includes("crypto wallets"),
+      hasDomainSection: normalizedText.includes("domain / dns"),
+      hasServerSection: normalizedText.includes("server / hosting"),
       hasSshItem: text.includes("Regression SSH Key"),
       hasIdentityItem: text.includes("Regression Identity"),
       hasApiItem: text.includes("Regression API Key"),
@@ -1449,6 +1503,11 @@ async function assertExpandedVaultItemTypes(client, baseUrl) {
       hasRecoveryItem: text.includes("Regression Recovery Codes"),
       hasLicenseItem: text.includes("Regression License"),
       hasDatabaseItem: text.includes("Regression Database"),
+      hasEmailItem: text.includes("Regression Email Account"),
+      hasBankItem: text.includes("Regression Bank Account"),
+      hasCryptoItem: text.includes("Regression Crypto Wallet"),
+      hasDomainItem: text.includes("regression.example.invalid"),
+      hasServerItem: text.includes("Regression Server"),
       textSample: text.replace(/\\s+/g, " ").slice(0, 1000),
     };
   })()`);
@@ -1460,6 +1519,11 @@ async function assertExpandedVaultItemTypes(client, baseUrl) {
   assert(libraryState.hasRecoverySection && libraryState.hasRecoveryItem, `Recovery Codes item did not render in library: ${libraryState.textSample}`);
   assert(libraryState.hasLicenseSection && libraryState.hasLicenseItem, `Software License item did not render in library: ${libraryState.textSample}`);
   assert(libraryState.hasDatabaseSection && libraryState.hasDatabaseItem, `Database Credential item did not render in library: ${libraryState.textSample}`);
+  assert(libraryState.hasEmailSection && libraryState.hasEmailItem, `Email Account item did not render in library: ${libraryState.textSample}`);
+  assert(libraryState.hasBankSection && libraryState.hasBankItem, `Bank Account item did not render in library: ${libraryState.textSample}`);
+  assert(libraryState.hasCryptoSection && libraryState.hasCryptoItem, `Crypto Wallet item did not render in library: ${libraryState.textSample}`);
+  assert(libraryState.hasDomainSection && libraryState.hasDomainItem, `Domain / DNS item did not render in library: ${libraryState.textSample}`);
+  assert(libraryState.hasServerSection && libraryState.hasServerItem, `Server / Hosting item did not render in library: ${libraryState.textSample}`);
 
   await client.send("Page.navigate", { url: routeUrl(baseUrl, "/vault/generator") });
   await waitForExpression(client, "document.readyState === 'complete'", BROWSER_TIMEOUT_MS, "generator route load after new item types");
@@ -1474,9 +1538,14 @@ async function assertExpandedVaultItemTypes(client, baseUrl) {
       hasRecovery: text.includes("Recovery Codes"),
       hasLicense: text.includes("Software License"),
       hasDatabase: text.includes("Database Credential"),
+      hasEmail: text.includes("Email Account"),
+      hasBank: text.includes("Bank Account"),
+      hasCrypto: text.includes("Crypto Wallet"),
+      hasDomain: text.includes("Domain / DNS"),
+      hasServer: text.includes("Server / Hosting"),
     };
   })()`);
-  assert(generatorState.hasSsh && generatorState.hasIdentity && generatorState.hasApi && generatorState.hasWifi && generatorState.hasRecovery && generatorState.hasLicense && generatorState.hasDatabase, "generator detail/list missing expanded type labels");
+  assert(generatorState.hasSsh && generatorState.hasIdentity && generatorState.hasApi && generatorState.hasWifi && generatorState.hasRecovery && generatorState.hasLicense && generatorState.hasDatabase && generatorState.hasEmail && generatorState.hasBank && generatorState.hasCrypto && generatorState.hasDomain && generatorState.hasServer, "generator detail/list missing expanded type labels");
 
   await client.send("Page.navigate", { url: routeUrl(baseUrl, "/vault/security/audit") });
   await waitForExpression(client, "document.readyState === 'complete'", BROWSER_TIMEOUT_MS, "security audit route load after new item types");
@@ -1491,17 +1560,29 @@ async function assertExpandedVaultItemTypes(client, baseUrl) {
       hasDatabaseSection: text.includes("Database Privilege Review"),
       hasDatabaseItem: text.includes("Regression Database"),
       hasPrivilegedBadge: text.includes("PRIVILEGED"),
+      hasBankSection: text.includes("Bank Account Secret Review"),
+      hasBankItem: text.includes("Regression Bank Account"),
+      hasCryptoSection: text.includes("Crypto Wallet Seed Review"),
+      hasCryptoItem: text.includes("Regression Crypto Wallet"),
+      hasDomainSection: text.includes("Domain Expiry Issues"),
+      hasDomainItem: text.includes("regression.example.invalid"),
+      hasServerSection: text.includes("Server Privilege Review"),
+      hasServerItem: text.includes("Regression Server"),
       textSample: text.replace(/\\s+/g, " ").slice(0, 1000),
     };
   })()`);
   assert(auditState.hasRecoverySection && auditState.hasRecoveryItem, `stale Recovery Codes audit did not render: ${auditState.textSample}`);
   assert(auditState.hasLicenseSection && auditState.hasLicenseItem, `expired Software License audit did not render: ${auditState.textSample}`);
   assert(auditState.hasDatabaseSection && auditState.hasDatabaseItem && auditState.hasPrivilegedBadge, `privileged Database Credential audit did not render: ${auditState.textSample}`);
+  assert(auditState.hasBankSection && auditState.hasBankItem, `Bank Account audit did not render: ${auditState.textSample}`);
+  assert(auditState.hasCryptoSection && auditState.hasCryptoItem, `Crypto Wallet audit did not render: ${auditState.textSample}`);
+  assert(auditState.hasDomainSection && auditState.hasDomainItem, `Domain / DNS audit did not render: ${auditState.textSample}`);
+  assert(auditState.hasServerSection && auditState.hasServerItem, `Server / Hosting audit did not render: ${auditState.textSample}`);
 
   const errors = client.browserErrors.filter((message) => /ReferenceError|TypeError|SyntaxError/i.test(String(message)));
   assert(errors.length === 0, `expanded item type flow produced runtime errors: ${errors.join(" | ").slice(0, 500)}`);
 
-  return "created SSH, Identity, API Key, Wi-Fi, Recovery Codes, Software License, and Database Credential items in disposable browser vault";
+  return "created expanded and advanced vault item types in disposable browser vault";
 }
 
 async function runBrowserChecks(options, collector) {

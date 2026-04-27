@@ -17,11 +17,16 @@ import {
   Lifebuoy,
   Certificate,
   Database,
+  EnvelopeSimple,
+  Bank,
+  CurrencyBtc,
+  Globe,
+  Cloud,
 } from "@phosphor-icons/react";
 import { generateSecurePassword } from "../lib/secure-random";
 import { normalizeTotpSecretInput, validateTotpSecret } from "../lib/totp";
 
-export type ItemType = "password" | "totp" | "note" | "card" | "ssh" | "identity" | "apiKey" | "wifi" | "recoveryCode" | "softwareLicense" | "databaseCredential";
+export type ItemType = "password" | "totp" | "note" | "card" | "ssh" | "identity" | "apiKey" | "wifi" | "recoveryCode" | "softwareLicense" | "databaseCredential" | "emailAccount" | "bankAccount" | "cryptoWallet" | "domainDns" | "serverHosting";
 
 export interface VaultItem {
   id: number;
@@ -108,6 +113,58 @@ export interface VaultItem {
   dbPassword?: string;
   dbConnectionUrl?: string;
   dbNotes?: string;
+  // Email account fields
+  emailAccountName?: string;
+  emailAddress?: string;
+  emailProvider?: string;
+  emailUsername?: string;
+  emailPassword?: string;
+  emailRecoveryEmail?: string;
+  emailRecoveryPhone?: string;
+  emailImapHost?: string;
+  emailSmtpHost?: string;
+  emailNotes?: string;
+  // Bank account fields
+  bankLabel?: string;
+  bankName?: string;
+  bankAccountHolder?: string;
+  bankAccountNumber?: string;
+  bankRoutingNumber?: string;
+  bankSwift?: string;
+  bankIban?: string;
+  bankBranch?: string;
+  bankPin?: string;
+  bankLoginUrl?: string;
+  bankNotes?: string;
+  // Crypto wallet / seed fields
+  cryptoWalletName?: string;
+  cryptoNetwork?: string;
+  cryptoPublicAddress?: string;
+  cryptoSeedPhrase?: string;
+  cryptoPrivateKey?: string;
+  cryptoDerivationPath?: string;
+  cryptoHardwareWallet?: string;
+  cryptoNotes?: string;
+  // Domain / DNS fields
+  domainName?: string;
+  domainRegistrar?: string;
+  domainDnsProvider?: string;
+  domainNameservers?: string;
+  domainExpires?: string;
+  domainRenewalEmail?: string;
+  domainEppCode?: string;
+  domainNotes?: string;
+  // Server / hosting fields
+  serverName?: string;
+  serverProvider?: string;
+  serverHost?: string;
+  serverIp?: string;
+  serverUsername?: string;
+  serverPassword?: string;
+  serverPanelUrl?: string;
+  serverSshReference?: string;
+  serverExpires?: string;
+  serverNotes?: string;
 }
 
 function generatePassword(length = 20): string {
@@ -139,6 +196,11 @@ const typeConfig = {
   recoveryCode: { label: "Recovery Codes", icon: Lifebuoy, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/25" },
   softwareLicense: { label: "Software License", icon: Certificate, color: "text-lime-400", bg: "bg-lime-500/10 border-lime-500/25" },
   databaseCredential: { label: "Database Credential", icon: Database, color: "text-indigo-400", bg: "bg-indigo-500/10 border-indigo-500/25" },
+  emailAccount: { label: "Email Account", icon: EnvelopeSimple, color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/25" },
+  bankAccount: { label: "Bank Account", icon: Bank, color: "text-teal-400", bg: "bg-teal-500/10 border-teal-500/25" },
+  cryptoWallet: { label: "Crypto Wallet", icon: CurrencyBtc, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/25" },
+  domainDns: { label: "Domain DNS", icon: Globe, color: "text-fuchsia-400", bg: "bg-fuchsia-500/10 border-fuchsia-500/25" },
+  serverHosting: { label: "Server Hosting", icon: Cloud, color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/25" },
 };
 
 const strengthConfig = {
@@ -250,6 +312,63 @@ export default function ItemModal({ open, onClose, onSave, editItem, initialType
   const [dbConnectionUrl, setDbConnectionUrl] = useState(editItem?.dbConnectionUrl ?? "");
   const [dbNotes, setDbNotes] = useState(editItem?.dbNotes ?? "");
 
+  // Email account form
+  const [emailAccountName, setEmailAccountName] = useState(editItem?.emailAccountName ?? "");
+  const [emailAddress, setEmailAddress] = useState(editItem?.emailAddress ?? "");
+  const [emailProvider, setEmailProvider] = useState(editItem?.emailProvider ?? "");
+  const [emailUsername, setEmailUsername] = useState(editItem?.emailUsername ?? "");
+  const [emailPassword, setEmailPassword] = useState(editItem?.emailPassword ?? "");
+  const [emailRecoveryEmail, setEmailRecoveryEmail] = useState(editItem?.emailRecoveryEmail ?? "");
+  const [emailRecoveryPhone, setEmailRecoveryPhone] = useState(editItem?.emailRecoveryPhone ?? "");
+  const [emailImapHost, setEmailImapHost] = useState(editItem?.emailImapHost ?? "");
+  const [emailSmtpHost, setEmailSmtpHost] = useState(editItem?.emailSmtpHost ?? "");
+  const [emailNotes, setEmailNotes] = useState(editItem?.emailNotes ?? "");
+
+  // Bank account form
+  const [bankLabel, setBankLabel] = useState(editItem?.bankLabel ?? "");
+  const [bankName, setBankName] = useState(editItem?.bankName ?? "");
+  const [bankAccountHolder, setBankAccountHolder] = useState(editItem?.bankAccountHolder ?? "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(editItem?.bankAccountNumber ?? "");
+  const [bankRoutingNumber, setBankRoutingNumber] = useState(editItem?.bankRoutingNumber ?? "");
+  const [bankSwift, setBankSwift] = useState(editItem?.bankSwift ?? "");
+  const [bankIban, setBankIban] = useState(editItem?.bankIban ?? "");
+  const [bankBranch, setBankBranch] = useState(editItem?.bankBranch ?? "");
+  const [bankPin, setBankPin] = useState(editItem?.bankPin ?? "");
+  const [bankLoginUrl, setBankLoginUrl] = useState(editItem?.bankLoginUrl ?? "");
+  const [bankNotes, setBankNotes] = useState(editItem?.bankNotes ?? "");
+
+  // Crypto wallet / seed form
+  const [cryptoWalletName, setCryptoWalletName] = useState(editItem?.cryptoWalletName ?? "");
+  const [cryptoNetwork, setCryptoNetwork] = useState(editItem?.cryptoNetwork ?? "");
+  const [cryptoPublicAddress, setCryptoPublicAddress] = useState(editItem?.cryptoPublicAddress ?? "");
+  const [cryptoSeedPhrase, setCryptoSeedPhrase] = useState(editItem?.cryptoSeedPhrase ?? "");
+  const [cryptoPrivateKey, setCryptoPrivateKey] = useState(editItem?.cryptoPrivateKey ?? "");
+  const [cryptoDerivationPath, setCryptoDerivationPath] = useState(editItem?.cryptoDerivationPath ?? "");
+  const [cryptoHardwareWallet, setCryptoHardwareWallet] = useState(editItem?.cryptoHardwareWallet ?? "No");
+  const [cryptoNotes, setCryptoNotes] = useState(editItem?.cryptoNotes ?? "");
+
+  // Domain / DNS form
+  const [domainName, setDomainName] = useState(editItem?.domainName ?? "");
+  const [domainRegistrar, setDomainRegistrar] = useState(editItem?.domainRegistrar ?? "");
+  const [domainDnsProvider, setDomainDnsProvider] = useState(editItem?.domainDnsProvider ?? "");
+  const [domainNameservers, setDomainNameservers] = useState(editItem?.domainNameservers ?? "");
+  const [domainExpires, setDomainExpires] = useState(editItem?.domainExpires ?? "");
+  const [domainRenewalEmail, setDomainRenewalEmail] = useState(editItem?.domainRenewalEmail ?? "");
+  const [domainEppCode, setDomainEppCode] = useState(editItem?.domainEppCode ?? "");
+  const [domainNotes, setDomainNotes] = useState(editItem?.domainNotes ?? "");
+
+  // Server / hosting form
+  const [serverName, setServerName] = useState(editItem?.serverName ?? "");
+  const [serverProvider, setServerProvider] = useState(editItem?.serverProvider ?? "");
+  const [serverHost, setServerHost] = useState(editItem?.serverHost ?? "");
+  const [serverIp, setServerIp] = useState(editItem?.serverIp ?? "");
+  const [serverUsername, setServerUsername] = useState(editItem?.serverUsername ?? "");
+  const [serverPassword, setServerPassword] = useState(editItem?.serverPassword ?? "");
+  const [serverPanelUrl, setServerPanelUrl] = useState(editItem?.serverPanelUrl ?? "");
+  const [serverSshReference, setServerSshReference] = useState(editItem?.serverSshReference ?? "");
+  const [serverExpires, setServerExpires] = useState(editItem?.serverExpires ?? "");
+  const [serverNotes, setServerNotes] = useState(editItem?.serverNotes ?? "");
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -333,6 +452,53 @@ export default function ItemModal({ open, onClose, onSave, editItem, initialType
       setDbPassword(editItem.dbPassword ?? "");
       setDbConnectionUrl(editItem.dbConnectionUrl ?? "");
       setDbNotes(editItem.dbNotes ?? "");
+      setEmailAccountName(editItem.emailAccountName ?? "");
+      setEmailAddress(editItem.emailAddress ?? "");
+      setEmailProvider(editItem.emailProvider ?? "");
+      setEmailUsername(editItem.emailUsername ?? "");
+      setEmailPassword(editItem.emailPassword ?? "");
+      setEmailRecoveryEmail(editItem.emailRecoveryEmail ?? "");
+      setEmailRecoveryPhone(editItem.emailRecoveryPhone ?? "");
+      setEmailImapHost(editItem.emailImapHost ?? "");
+      setEmailSmtpHost(editItem.emailSmtpHost ?? "");
+      setEmailNotes(editItem.emailNotes ?? "");
+      setBankLabel(editItem.bankLabel ?? "");
+      setBankName(editItem.bankName ?? "");
+      setBankAccountHolder(editItem.bankAccountHolder ?? "");
+      setBankAccountNumber(editItem.bankAccountNumber ?? "");
+      setBankRoutingNumber(editItem.bankRoutingNumber ?? "");
+      setBankSwift(editItem.bankSwift ?? "");
+      setBankIban(editItem.bankIban ?? "");
+      setBankBranch(editItem.bankBranch ?? "");
+      setBankPin(editItem.bankPin ?? "");
+      setBankLoginUrl(editItem.bankLoginUrl ?? "");
+      setBankNotes(editItem.bankNotes ?? "");
+      setCryptoWalletName(editItem.cryptoWalletName ?? "");
+      setCryptoNetwork(editItem.cryptoNetwork ?? "");
+      setCryptoPublicAddress(editItem.cryptoPublicAddress ?? "");
+      setCryptoSeedPhrase(editItem.cryptoSeedPhrase ?? "");
+      setCryptoPrivateKey(editItem.cryptoPrivateKey ?? "");
+      setCryptoDerivationPath(editItem.cryptoDerivationPath ?? "");
+      setCryptoHardwareWallet(editItem.cryptoHardwareWallet ?? "No");
+      setCryptoNotes(editItem.cryptoNotes ?? "");
+      setDomainName(editItem.domainName ?? "");
+      setDomainRegistrar(editItem.domainRegistrar ?? "");
+      setDomainDnsProvider(editItem.domainDnsProvider ?? "");
+      setDomainNameservers(editItem.domainNameservers ?? "");
+      setDomainExpires(editItem.domainExpires ?? "");
+      setDomainRenewalEmail(editItem.domainRenewalEmail ?? "");
+      setDomainEppCode(editItem.domainEppCode ?? "");
+      setDomainNotes(editItem.domainNotes ?? "");
+      setServerName(editItem.serverName ?? "");
+      setServerProvider(editItem.serverProvider ?? "");
+      setServerHost(editItem.serverHost ?? "");
+      setServerIp(editItem.serverIp ?? "");
+      setServerUsername(editItem.serverUsername ?? "");
+      setServerPassword(editItem.serverPassword ?? "");
+      setServerPanelUrl(editItem.serverPanelUrl ?? "");
+      setServerSshReference(editItem.serverSshReference ?? "");
+      setServerExpires(editItem.serverExpires ?? "");
+      setServerNotes(editItem.serverNotes ?? "");
       return;
     }
 
@@ -404,6 +570,53 @@ export default function ItemModal({ open, onClose, onSave, editItem, initialType
     setDbPassword("");
     setDbConnectionUrl("");
     setDbNotes("");
+    setEmailAccountName("");
+    setEmailAddress("");
+    setEmailProvider("");
+    setEmailUsername("");
+    setEmailPassword("");
+    setEmailRecoveryEmail("");
+    setEmailRecoveryPhone("");
+    setEmailImapHost("");
+    setEmailSmtpHost("");
+    setEmailNotes("");
+    setBankLabel("");
+    setBankName("");
+    setBankAccountHolder("");
+    setBankAccountNumber("");
+    setBankRoutingNumber("");
+    setBankSwift("");
+    setBankIban("");
+    setBankBranch("");
+    setBankPin("");
+    setBankLoginUrl("");
+    setBankNotes("");
+    setCryptoWalletName("");
+    setCryptoNetwork("");
+    setCryptoPublicAddress("");
+    setCryptoSeedPhrase("");
+    setCryptoPrivateKey("");
+    setCryptoDerivationPath("");
+    setCryptoHardwareWallet("No");
+    setCryptoNotes("");
+    setDomainName("");
+    setDomainRegistrar("");
+    setDomainDnsProvider("");
+    setDomainNameservers("");
+    setDomainExpires("");
+    setDomainRenewalEmail("");
+    setDomainEppCode("");
+    setDomainNotes("");
+    setServerName("");
+    setServerProvider("");
+    setServerHost("");
+    setServerIp("");
+    setServerUsername("");
+    setServerPassword("");
+    setServerPanelUrl("");
+    setServerSshReference("");
+    setServerExpires("");
+    setServerNotes("");
   }, [editItem, initialType, open]);
 
   const pwdStrength = password ? getStrength(password) : null;
@@ -448,6 +661,22 @@ export default function ItemModal({ open, onClose, onSave, editItem, initialType
       if (!dbHost.trim() && !dbConnectionUrl.trim()) e.dbHost = "Host or connection URL is required";
       if (!dbUsername.trim() && !dbConnectionUrl.trim()) e.dbUsername = "Database username or connection URL is required";
       if (!dbPassword.trim() && !dbConnectionUrl.trim()) e.dbPassword = "Password or connection URL is required";
+    } else if (activeType === "emailAccount") {
+      if (!emailAccountName.trim()) e.emailAccountName = "Email label is required";
+      if (!emailAddress.trim()) e.emailAddress = "Email address is required";
+      if (!emailPassword.trim()) e.emailPassword = "Email password or app password is required";
+    } else if (activeType === "bankAccount") {
+      if (!bankLabel.trim()) e.bankLabel = "Bank label is required";
+      if (!bankName.trim()) e.bankName = "Bank name is required";
+      if (!bankAccountNumber.trim() && !bankIban.trim()) e.bankAccountNumber = "Account number or IBAN is required";
+    } else if (activeType === "cryptoWallet") {
+      if (!cryptoWalletName.trim()) e.cryptoWalletName = "Wallet label is required";
+      if (!cryptoSeedPhrase.trim() && !cryptoPrivateKey.trim() && !cryptoPublicAddress.trim()) e.cryptoSeedPhrase = "Seed phrase, private key, or public address is required";
+    } else if (activeType === "domainDns") {
+      if (!domainName.trim()) e.domainName = "Domain name is required";
+    } else if (activeType === "serverHosting") {
+      if (!serverName.trim()) e.serverName = "Server label is required";
+      if (!serverHost.trim() && !serverIp.trim() && !serverPanelUrl.trim()) e.serverHost = "Host, IP, or panel URL is required";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -576,6 +805,83 @@ export default function ItemModal({ open, onClose, onSave, editItem, initialType
         dbNotes,
         title: dbName,
         preview: [dbEngine, dbHost || dbConnectionUrl, dbDatabase].filter(Boolean).join(" - "),
+        updatedAt: "just now",
+      });
+    } else if (activeType === "emailAccount") {
+      Object.assign(base, {
+        emailAccountName,
+        emailAddress,
+        emailProvider,
+        emailUsername,
+        emailPassword,
+        emailRecoveryEmail,
+        emailRecoveryPhone,
+        emailImapHost,
+        emailSmtpHost,
+        emailNotes,
+        title: emailAccountName,
+        preview: [emailAddress, emailProvider].filter(Boolean).join(" - "),
+        updatedAt: "just now",
+      });
+    } else if (activeType === "bankAccount") {
+      Object.assign(base, {
+        bankLabel,
+        bankName,
+        bankAccountHolder,
+        bankAccountNumber,
+        bankRoutingNumber,
+        bankSwift,
+        bankIban,
+        bankBranch,
+        bankPin,
+        bankLoginUrl,
+        bankNotes,
+        title: bankLabel,
+        preview: [bankName, bankAccountHolder].filter(Boolean).join(" - "),
+        updatedAt: "just now",
+      });
+    } else if (activeType === "cryptoWallet") {
+      Object.assign(base, {
+        cryptoWalletName,
+        cryptoNetwork,
+        cryptoPublicAddress,
+        cryptoSeedPhrase,
+        cryptoPrivateKey,
+        cryptoDerivationPath,
+        cryptoHardwareWallet,
+        cryptoNotes,
+        title: cryptoWalletName,
+        preview: [cryptoNetwork, cryptoPublicAddress].filter(Boolean).join(" - ") || "Crypto wallet",
+        updatedAt: "just now",
+      });
+    } else if (activeType === "domainDns") {
+      Object.assign(base, {
+        domainName,
+        domainRegistrar,
+        domainDnsProvider,
+        domainNameservers,
+        domainExpires,
+        domainRenewalEmail,
+        domainEppCode,
+        domainNotes,
+        title: domainName,
+        preview: [domainRegistrar, domainDnsProvider, domainExpires].filter(Boolean).join(" - "),
+        updatedAt: "just now",
+      });
+    } else if (activeType === "serverHosting") {
+      Object.assign(base, {
+        serverName,
+        serverProvider,
+        serverHost,
+        serverIp,
+        serverUsername,
+        serverPassword,
+        serverPanelUrl,
+        serverSshReference,
+        serverExpires,
+        serverNotes,
+        title: serverName,
+        preview: [serverProvider, serverHost || serverIp].filter(Boolean).join(" - "),
         updatedAt: "just now",
       });
     }
@@ -1067,6 +1373,254 @@ export default function ItemModal({ open, onClose, onSave, editItem, initialType
               </Field>
               <Field label="Notes">
                 <textarea value={dbNotes} onChange={e => setDbNotes(e.target.value)} placeholder="Environment, SSL mode, rotation date, read/write scope..." rows={2} className={inputCls() + " resize-none"} />
+              </Field>
+            </>
+          )}
+
+          {/* Email account form */}
+          {activeType === "emailAccount" && (
+            <>
+              <Field label="Email Label *" error={errors.emailAccountName}>
+                <input value={emailAccountName} onChange={e => setEmailAccountName(e.target.value)} placeholder="e.g. Personal Gmail" className={inputCls(!!errors.emailAccountName)} />
+              </Field>
+              <Field label="Email Address *" error={errors.emailAddress}>
+                <input value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder="you@example.com" className={inputCls(!!errors.emailAddress)} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Provider">
+                  <input value={emailProvider} onChange={e => setEmailProvider(e.target.value)} placeholder="Gmail, Outlook, Proton..." className={inputCls()} />
+                </Field>
+                <Field label="Username">
+                  <input value={emailUsername} onChange={e => setEmailUsername(e.target.value)} placeholder="Optional login username" className={inputCls()} />
+                </Field>
+              </div>
+              <Field label="Password / App Password *" error={errors.emailPassword}>
+                <div className="relative">
+                  <input type={showPwd ? "text" : "password"} value={emailPassword} onChange={e => setEmailPassword(e.target.value)} placeholder="Email or app password" className={inputCls(!!errors.emailPassword) + " pr-10 font-mono"} />
+                  <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPwd ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
+                  </button>
+                </div>
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Recovery Email">
+                  <input value={emailRecoveryEmail} onChange={e => setEmailRecoveryEmail(e.target.value)} placeholder="backup@example.com" className={inputCls()} />
+                </Field>
+                <Field label="Recovery Phone">
+                  <input value={emailRecoveryPhone} onChange={e => setEmailRecoveryPhone(e.target.value)} placeholder="+62..." className={inputCls()} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="IMAP Host">
+                  <input value={emailImapHost} onChange={e => setEmailImapHost(e.target.value)} placeholder="imap.example.com" className={inputCls()} />
+                </Field>
+                <Field label="SMTP Host">
+                  <input value={emailSmtpHost} onChange={e => setEmailSmtpHost(e.target.value)} placeholder="smtp.example.com" className={inputCls()} />
+                </Field>
+              </div>
+              <Field label="Notes">
+                <textarea value={emailNotes} onChange={e => setEmailNotes(e.target.value)} placeholder="2FA method, recovery rules, mailbox notes..." rows={2} className={inputCls() + " resize-none"} />
+              </Field>
+            </>
+          )}
+
+          {/* Bank account form */}
+          {activeType === "bankAccount" && (
+            <>
+              <Field label="Bank Label *" error={errors.bankLabel}>
+                <input value={bankLabel} onChange={e => setBankLabel(e.target.value)} placeholder="e.g. Payroll Account" className={inputCls(!!errors.bankLabel)} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Bank Name *" error={errors.bankName}>
+                  <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Bank name" className={inputCls(!!errors.bankName)} />
+                </Field>
+                <Field label="Account Holder">
+                  <input value={bankAccountHolder} onChange={e => setBankAccountHolder(e.target.value)} placeholder="Account owner" className={inputCls()} />
+                </Field>
+              </div>
+              <Field label="Account Number *" error={errors.bankAccountNumber}>
+                <input value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} placeholder="Account number" className={inputCls(!!errors.bankAccountNumber) + " font-mono"} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Routing / Sort Code">
+                  <input value={bankRoutingNumber} onChange={e => setBankRoutingNumber(e.target.value)} placeholder="Routing, sort, or clearing code" className={inputCls() + " font-mono"} />
+                </Field>
+                <Field label="SWIFT / BIC">
+                  <input value={bankSwift} onChange={e => setBankSwift(e.target.value.toUpperCase())} placeholder="SWIFTBIC" className={inputCls() + " font-mono uppercase"} />
+                </Field>
+              </div>
+              <Field label="IBAN">
+                <input value={bankIban} onChange={e => setBankIban(e.target.value.toUpperCase())} placeholder="IBAN" className={inputCls() + " font-mono uppercase"} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Branch">
+                  <input value={bankBranch} onChange={e => setBankBranch(e.target.value)} placeholder="Branch / city" className={inputCls()} />
+                </Field>
+                <Field label="PIN / Access Code">
+                  <div className="relative">
+                    <input type={showPwd ? "text" : "password"} value={bankPin} onChange={e => setBankPin(e.target.value)} placeholder="Optional high-risk secret" className={inputCls() + " pr-10 font-mono"} />
+                    <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                      {showPwd ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
+                    </button>
+                  </div>
+                </Field>
+              </div>
+              <Field label="Online Banking URL">
+                <input value={bankLoginUrl} onChange={e => setBankLoginUrl(e.target.value)} placeholder="https://bank.example.com" className={inputCls()} />
+              </Field>
+              <Field label="Notes">
+                <textarea value={bankNotes} onChange={e => setBankNotes(e.target.value)} placeholder="Support phone, card linkage, transfer limits..." rows={2} className={inputCls() + " resize-none"} />
+              </Field>
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-sm px-3 py-2.5 flex gap-2">
+                <Warning size={13} weight="duotone" className="text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-400/80 font-mono leading-relaxed">
+                  Avoid storing banking PINs unless there is no safer recovery path. Ciphora will flag stored PINs in Security Audit.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Crypto wallet / seed form */}
+          {activeType === "cryptoWallet" && (
+            <>
+              <Field label="Wallet Label *" error={errors.cryptoWalletName}>
+                <input value={cryptoWalletName} onChange={e => setCryptoWalletName(e.target.value)} placeholder="e.g. Ledger ETH Wallet" className={inputCls(!!errors.cryptoWalletName)} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Network / Chain">
+                  <input value={cryptoNetwork} onChange={e => setCryptoNetwork(e.target.value)} placeholder="Bitcoin, Ethereum, Solana..." className={inputCls()} />
+                </Field>
+                <Field label="Hardware Wallet">
+                  <select value={cryptoHardwareWallet} onChange={e => setCryptoHardwareWallet(e.target.value)} className={inputCls() + " cursor-pointer"}>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
+                </Field>
+              </div>
+              <Field label="Public Address">
+                <textarea value={cryptoPublicAddress} onChange={e => setCryptoPublicAddress(e.target.value)} placeholder="Wallet public address" rows={2} className={inputCls() + " resize-none font-mono text-xs"} />
+              </Field>
+              <Field label="Seed Phrase / Recovery Phrase" error={errors.cryptoSeedPhrase}>
+                <div className="relative">
+                  <textarea
+                    value={cryptoSeedPhrase}
+                    onChange={e => setCryptoSeedPhrase(e.target.value)}
+                    placeholder="12 or 24 word seed phrase"
+                    rows={4}
+                    className={inputCls(!!errors.cryptoSeedPhrase) + ` resize-none pr-10 font-mono text-xs leading-relaxed ${showPwd ? "" : "text-transparent caret-foreground"}`}
+                  />
+                  <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPwd ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
+                  </button>
+                  {!showPwd && cryptoSeedPhrase && <div className="absolute inset-x-3 bottom-3 text-xs font-mono text-muted-foreground pointer-events-none">Seed phrase hidden - click eye to review</div>}
+                </div>
+              </Field>
+              <Field label="Private Key">
+                <div className="relative">
+                  <textarea value={cryptoPrivateKey} onChange={e => setCryptoPrivateKey(e.target.value)} placeholder="Optional private key" rows={3} className={inputCls() + ` resize-none pr-10 font-mono text-xs ${showPwd ? "" : "text-transparent caret-foreground"}`} />
+                  <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPwd ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
+                  </button>
+                </div>
+              </Field>
+              <Field label="Derivation Path">
+                <input value={cryptoDerivationPath} onChange={e => setCryptoDerivationPath(e.target.value)} placeholder="m/44'/60'/0'/0/0" className={inputCls() + " font-mono"} />
+              </Field>
+              <Field label="Notes">
+                <textarea value={cryptoNotes} onChange={e => setCryptoNotes(e.target.value)} placeholder="Wallet location, multisig policy, emergency notes..." rows={2} className={inputCls() + " resize-none"} />
+              </Field>
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-sm px-3 py-2.5 flex gap-2">
+                <Warning size={13} weight="duotone" className="text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-400/80 font-mono leading-relaxed">
+                  Seed phrases can fully control funds. Prefer offline backups and hardware wallets for large holdings.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Domain / DNS form */}
+          {activeType === "domainDns" && (
+            <>
+              <Field label="Domain Name *" error={errors.domainName}>
+                <input value={domainName} onChange={e => setDomainName(e.target.value.toLowerCase())} placeholder="example.com" className={inputCls(!!errors.domainName) + " font-mono lowercase"} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Registrar">
+                  <input value={domainRegistrar} onChange={e => setDomainRegistrar(e.target.value)} placeholder="Cloudflare, Namecheap..." className={inputCls()} />
+                </Field>
+                <Field label="DNS Provider">
+                  <input value={domainDnsProvider} onChange={e => setDomainDnsProvider(e.target.value)} placeholder="DNS provider" className={inputCls()} />
+                </Field>
+              </div>
+              <Field label="Nameservers">
+                <textarea value={domainNameservers} onChange={e => setDomainNameservers(e.target.value)} placeholder="One nameserver per line" rows={2} className={inputCls() + " resize-none font-mono text-xs"} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Expires">
+                  <input value={domainExpires} onChange={e => setDomainExpires(e.target.value)} placeholder="YYYY-MM-DD" className={inputCls() + " font-mono"} />
+                </Field>
+                <Field label="Renewal Email">
+                  <input value={domainRenewalEmail} onChange={e => setDomainRenewalEmail(e.target.value)} placeholder="billing@example.com" className={inputCls()} />
+                </Field>
+              </div>
+              <Field label="EPP / Auth Code">
+                <div className="relative">
+                  <input type={showPwd ? "text" : "password"} value={domainEppCode} onChange={e => setDomainEppCode(e.target.value)} placeholder="Optional transfer auth code" className={inputCls() + " pr-10 font-mono"} />
+                  <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPwd ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
+                  </button>
+                </div>
+              </Field>
+              <Field label="Notes">
+                <textarea value={domainNotes} onChange={e => setDomainNotes(e.target.value)} placeholder="DNSSEC, renewal policy, important records..." rows={2} className={inputCls() + " resize-none"} />
+              </Field>
+            </>
+          )}
+
+          {/* Server / hosting form */}
+          {activeType === "serverHosting" && (
+            <>
+              <Field label="Server Label *" error={errors.serverName}>
+                <input value={serverName} onChange={e => setServerName(e.target.value)} placeholder="e.g. Production VPS" className={inputCls(!!errors.serverName)} />
+              </Field>
+              <Field label="Provider">
+                <input value={serverProvider} onChange={e => setServerProvider(e.target.value)} placeholder="Hetzner, AWS, Cloudflare..." className={inputCls()} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Host / FQDN" error={errors.serverHost}>
+                  <input value={serverHost} onChange={e => setServerHost(e.target.value)} placeholder="server.example.com" className={inputCls(!!errors.serverHost)} />
+                </Field>
+                <Field label="IP Address">
+                  <input value={serverIp} onChange={e => setServerIp(e.target.value)} placeholder="203.0.113.10" className={inputCls() + " font-mono"} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Username">
+                  <input value={serverUsername} onChange={e => setServerUsername(e.target.value)} placeholder="root, deploy, admin" className={inputCls()} />
+                </Field>
+                <Field label="Password">
+                  <div className="relative">
+                    <input type={showPwd ? "text" : "password"} value={serverPassword} onChange={e => setServerPassword(e.target.value)} placeholder="Optional server password" className={inputCls() + " pr-10 font-mono"} />
+                    <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                      {showPwd ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
+                    </button>
+                  </div>
+                </Field>
+              </div>
+              <Field label="Panel / Console URL">
+                <input value={serverPanelUrl} onChange={e => setServerPanelUrl(e.target.value)} placeholder="https://panel.example.com" className={inputCls()} />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="SSH Reference">
+                  <input value={serverSshReference} onChange={e => setServerSshReference(e.target.value)} placeholder="SSH item name / key id" className={inputCls()} />
+                </Field>
+                <Field label="Renews / Expires">
+                  <input value={serverExpires} onChange={e => setServerExpires(e.target.value)} placeholder="YYYY-MM-DD / monthly" className={inputCls() + " font-mono"} />
+                </Field>
+              </div>
+              <Field label="Notes">
+                <textarea value={serverNotes} onChange={e => setServerNotes(e.target.value)} placeholder="OS, region, backup window, firewall notes..." rows={2} className={inputCls() + " resize-none"} />
               </Field>
             </>
           )}

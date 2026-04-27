@@ -35,6 +35,10 @@ import {
   Lifebuoy,
   Certificate,
   Database,
+  EnvelopeSimple,
+  Bank,
+  CurrencyBtc,
+  Cloud,
 } from "@phosphor-icons/react";
 import type { VaultItem } from "./ItemModal";
 import type { TotpState } from "../hooks/useVaultStore";
@@ -51,6 +55,11 @@ const typeIcons: Record<string, React.ReactNode> = {
   recoveryCode: <Lifebuoy weight="duotone" size={14} />,
   softwareLicense: <Certificate weight="duotone" size={14} />,
   databaseCredential: <Database weight="duotone" size={14} />,
+  emailAccount: <EnvelopeSimple weight="duotone" size={14} />,
+  bankAccount: <Bank weight="duotone" size={14} />,
+  cryptoWallet: <CurrencyBtc weight="duotone" size={14} />,
+  domainDns: <Globe weight="duotone" size={14} />,
+  serverHosting: <Cloud weight="duotone" size={14} />,
 };
 
 const typeBadgeClass: Record<string, string> = {
@@ -65,6 +74,11 @@ const typeBadgeClass: Record<string, string> = {
   recoveryCode: "border-emerald-600/50 text-emerald-400",
   softwareLicense: "border-lime-600/50 text-lime-400",
   databaseCredential: "border-indigo-600/50 text-indigo-400",
+  emailAccount: "border-rose-600/50 text-rose-400",
+  bankAccount: "border-teal-600/50 text-teal-400",
+  cryptoWallet: "border-yellow-600/50 text-yellow-400",
+  domainDns: "border-fuchsia-600/50 text-fuchsia-400",
+  serverHosting: "border-slate-600/50 text-slate-400",
 };
 
 const typeLabels: Record<string, string> = {
@@ -79,6 +93,11 @@ const typeLabels: Record<string, string> = {
   recoveryCode: "Recovery Codes",
   softwareLicense: "Software License",
   databaseCredential: "Database Credential",
+  emailAccount: "Email Account",
+  bankAccount: "Bank Account",
+  cryptoWallet: "Crypto Wallet",
+  domainDns: "Domain / DNS",
+  serverHosting: "Server / Hosting",
 };
 
 function generatePassword(opts: {
@@ -122,6 +141,11 @@ interface GeneratorToolsProps {
   recoveryCodes?: VaultItem[];
   softwareLicenses?: VaultItem[];
   databaseCredentials?: VaultItem[];
+  emailAccounts?: VaultItem[];
+  bankAccounts?: VaultItem[];
+  cryptoWallets?: VaultItem[];
+  domainDnsRecords?: VaultItem[];
+  serverHostingAccounts?: VaultItem[];
   totpStates?: Record<number, TotpState>;
   onEditItem?: (item: VaultItem) => void;
   onDeleteItem?: (id: number, type: string, name: string) => void;
@@ -140,6 +164,11 @@ export default function GeneratorTools({
   recoveryCodes = [],
   softwareLicenses = [],
   databaseCredentials = [],
+  emailAccounts = [],
+  bankAccounts = [],
+  cryptoWallets = [],
+  domainDnsRecords = [],
+  serverHostingAccounts = [],
   totpStates = {},
   onEditItem,
   onDeleteItem,
@@ -158,6 +187,11 @@ export default function GeneratorTools({
     ...recoveryCodes,
     ...softwareLicenses,
     ...databaseCredentials,
+    ...emailAccounts,
+    ...bankAccounts,
+    ...cryptoWallets,
+    ...domainDnsRecords,
+    ...serverHostingAccounts,
   ];
 
   const [selectedId, setSelectedId] = useState<number | null>(allItems[0]?.id ?? null);
@@ -224,7 +258,7 @@ export default function GeneratorTools({
   const totpUrgent = !hasTotpError && totpSeconds <= 8;
   const displayedTotpCode = hasTotpError ? "INVALID" : totpCode;
 
-  const totalItems = passwords.length + totps.length + notes.length + cards.length + sshKeys.length + identities.length + apiKeys.length + wifiNetworks.length + recoveryCodes.length + softwareLicenses.length + databaseCredentials.length;
+  const totalItems = passwords.length + totps.length + notes.length + cards.length + sshKeys.length + identities.length + apiKeys.length + wifiNetworks.length + recoveryCodes.length + softwareLicenses.length + databaseCredentials.length + emailAccounts.length + bankAccounts.length + cryptoWallets.length + domainDnsRecords.length + serverHostingAccounts.length;
 
   const getItemName = (item: VaultItem): string => {
     return item.site
@@ -239,6 +273,13 @@ export default function GeneratorTools({
       ?? item.recoveryName
       ?? item.softwareName
       ?? item.dbName
+      ?? item.emailAccountName
+      ?? item.emailAddress
+      ?? item.bankLabel
+      ?? item.bankName
+      ?? item.cryptoWalletName
+      ?? item.domainName
+      ?? item.serverName
       ?? `${item.brand} ${item.number?.slice(-4) ?? ""}`
       ?? "Item";
   };
@@ -254,11 +295,16 @@ export default function GeneratorTools({
       ?? item.recoveryService
       ?? item.licenseEmail
       ?? item.dbHost
+      ?? item.emailAddress
+      ?? item.bankName
+      ?? item.cryptoNetwork
+      ?? item.domainRegistrar
+      ?? item.serverProvider
       ?? "";
   };
 
   const getFavicon = (item: VaultItem): string => {
-    return item.favicon ?? (item.issuer ?? item.title ?? item.brand ?? item.sshName ?? item.identityLabel ?? item.apiName ?? item.ssid ?? item.recoveryName ?? item.softwareName ?? item.dbName ?? "?").slice(0, 2).toUpperCase();
+    return item.favicon ?? (item.issuer ?? item.title ?? item.brand ?? item.sshName ?? item.identityLabel ?? item.apiName ?? item.ssid ?? item.recoveryName ?? item.softwareName ?? item.dbName ?? item.emailAccountName ?? item.emailAddress ?? item.bankLabel ?? item.cryptoWalletName ?? item.domainName ?? item.serverName ?? "?").slice(0, 2).toUpperCase();
   };
 
   return (
@@ -983,6 +1029,221 @@ export default function GeneratorTools({
                         <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Notes</Label>
                         <div className="border border-border rounded-sm bg-background px-3 py-2">
                           <p className="text-xs font-mono text-muted-foreground leading-relaxed whitespace-pre-line">{selectedItem.dbNotes}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Email account fields */}
+                {selectedItem.type === "emailAccount" && (
+                  <>
+                    {[
+                      ["Email Address", selectedItem.emailAddress],
+                      ["Provider", selectedItem.emailProvider],
+                      ["Username", selectedItem.emailUsername],
+                      ["Recovery Email", selectedItem.emailRecoveryEmail],
+                      ["Recovery Phone", selectedItem.emailRecoveryPhone],
+                    ].filter(([, value]) => value).map(([label, value]) => (
+                      <div key={label} className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">{label}</Label>
+                        <div className="flex items-center gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                          <span className="flex-1 text-sm font-mono text-foreground truncate">{value}</span>
+                          <button onClick={() => handleCopy(value ?? "", `email-${label}-${selectedItem.id}`)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {copied === `email-${label}-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Password / App Password</Label>
+                      <div className="flex items-center gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                        <span className="flex-1 text-sm font-mono text-foreground truncate">{showPassword ? selectedItem.emailPassword : selectedItem.emailPassword ? "*".repeat(Math.min(selectedItem.emailPassword.length, 24)) : "-"}</span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                          <button onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <EyeSlash weight="duotone" size={14} className="text-muted-foreground" /> : <Eye weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                          <button onClick={() => handleCopy(selectedItem.emailPassword ?? "", `email-pass-${selectedItem.id}`)}>
+                            {copied === `email-pass-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    {(selectedItem.emailImapHost || selectedItem.emailSmtpHost) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">IMAP</Label>
+                          <div className="border border-border rounded-sm bg-background px-3 py-2">
+                            <span className="text-xs font-mono text-muted-foreground truncate">{selectedItem.emailImapHost || "-"}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">SMTP</Label>
+                          <div className="border border-border rounded-sm bg-background px-3 py-2">
+                            <span className="text-xs font-mono text-muted-foreground truncate">{selectedItem.emailSmtpHost || "-"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Bank account fields */}
+                {selectedItem.type === "bankAccount" && (
+                  <>
+                    {[
+                      ["Bank", selectedItem.bankName],
+                      ["Holder", selectedItem.bankAccountHolder],
+                      ["Account Number", selectedItem.bankAccountNumber],
+                      ["Routing / Sort Code", selectedItem.bankRoutingNumber],
+                      ["SWIFT / BIC", selectedItem.bankSwift],
+                      ["IBAN", selectedItem.bankIban],
+                      ["Branch", selectedItem.bankBranch],
+                    ].filter(([, value]) => value).map(([label, value]) => (
+                      <div key={label} className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">{label}</Label>
+                        <div className="flex items-center gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                          <span className="flex-1 text-sm font-mono text-foreground truncate">{value}</span>
+                          <button onClick={() => handleCopy(value ?? "", `bank-${label}-${selectedItem.id}`)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {copied === `bank-${label}-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {selectedItem.bankPin && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">PIN / Access Code</Label>
+                        <div className="flex items-center gap-2 border border-amber-500/30 rounded-sm bg-amber-500/5 px-3 py-2 group hover:border-amber-500 transition-colors duration-150">
+                          <span className="flex-1 text-sm font-mono text-foreground truncate">{showPassword ? selectedItem.bankPin : "*".repeat(Math.min(selectedItem.bankPin.length, 12))}</span>
+                          <button onClick={() => setShowPassword(!showPassword)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {showPassword ? <EyeSlash weight="duotone" size={14} className="text-muted-foreground" /> : <Eye weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Crypto wallet fields */}
+                {selectedItem.type === "cryptoWallet" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Network</Label>
+                        <div className="border border-border rounded-sm bg-background px-3 py-2">
+                          <span className="text-sm font-mono text-foreground">{selectedItem.cryptoNetwork || "-"}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Hardware</Label>
+                        <div className="border border-border rounded-sm bg-background px-3 py-2">
+                          <span className="text-sm font-mono text-foreground">{selectedItem.cryptoHardwareWallet || "No"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {selectedItem.cryptoPublicAddress && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Public Address</Label>
+                        <div className="flex items-start gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                          <span className="flex-1 text-xs font-mono text-foreground break-all line-clamp-4">{selectedItem.cryptoPublicAddress}</span>
+                          <button onClick={() => handleCopy(selectedItem.cryptoPublicAddress ?? "", `crypto-address-${selectedItem.id}`)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {copied === `crypto-address-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">{selectedItem.cryptoSeedPhrase ? "Seed Phrase" : "Private Key"}</Label>
+                      <div className="flex items-start gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                        <span className="flex-1 text-xs font-mono text-foreground break-all whitespace-pre-line line-clamp-6">
+                          {showPassword ? (selectedItem.cryptoSeedPhrase || selectedItem.cryptoPrivateKey || "-") : (selectedItem.cryptoSeedPhrase || selectedItem.cryptoPrivateKey) ? "*".repeat(24) : "-"}
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                          <button onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <EyeSlash weight="duotone" size={14} className="text-muted-foreground" /> : <Eye weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                          <button onClick={() => handleCopy(selectedItem.cryptoSeedPhrase || selectedItem.cryptoPrivateKey || "", `crypto-secret-${selectedItem.id}`)}>
+                            {copied === `crypto-secret-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Domain / DNS fields */}
+                {selectedItem.type === "domainDns" && (
+                  <>
+                    {[
+                      ["Registrar", selectedItem.domainRegistrar],
+                      ["DNS Provider", selectedItem.domainDnsProvider],
+                      ["Expires", selectedItem.domainExpires],
+                      ["Renewal Email", selectedItem.domainRenewalEmail],
+                    ].filter(([, value]) => value).map(([label, value]) => (
+                      <div key={label} className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">{label}</Label>
+                        <div className="border border-border rounded-sm bg-background px-3 py-2">
+                          <span className="text-sm font-mono text-foreground truncate">{value}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {selectedItem.domainNameservers && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Nameservers</Label>
+                        <div className="border border-border rounded-sm bg-background px-3 py-2">
+                          <p className="text-xs font-mono text-muted-foreground leading-relaxed whitespace-pre-line">{selectedItem.domainNameservers}</p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedItem.domainEppCode && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">EPP / Auth Code</Label>
+                        <div className="flex items-center gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                          <span className="flex-1 text-sm font-mono text-foreground truncate">{showPassword ? selectedItem.domainEppCode : "*".repeat(Math.min(selectedItem.domainEppCode.length, 18))}</span>
+                          <button onClick={() => setShowPassword(!showPassword)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {showPassword ? <EyeSlash weight="duotone" size={14} className="text-muted-foreground" /> : <Eye weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Server / hosting fields */}
+                {selectedItem.type === "serverHosting" && (
+                  <>
+                    {[
+                      ["Provider", selectedItem.serverProvider],
+                      ["Host", selectedItem.serverHost],
+                      ["IP Address", selectedItem.serverIp],
+                      ["Username", selectedItem.serverUsername],
+                      ["Panel URL", selectedItem.serverPanelUrl],
+                      ["SSH Reference", selectedItem.serverSshReference],
+                      ["Renews / Expires", selectedItem.serverExpires],
+                    ].filter(([, value]) => value).map(([label, value]) => (
+                      <div key={label} className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">{label}</Label>
+                        <div className="flex items-center gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                          <span className="flex-1 text-sm font-mono text-foreground truncate">{value}</span>
+                          <button onClick={() => handleCopy(value ?? "", `server-${label}-${selectedItem.id}`)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {copied === `server-${label}-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {selectedItem.serverPassword && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground font-mono uppercase tracking-widest">Password</Label>
+                        <div className="flex items-center gap-2 border border-border rounded-sm bg-background px-3 py-2 group hover:border-primary transition-colors duration-150">
+                          <span className="flex-1 text-sm font-mono text-foreground truncate">{showPassword ? selectedItem.serverPassword : "*".repeat(Math.min(selectedItem.serverPassword.length, 24))}</span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                            <button onClick={() => setShowPassword(!showPassword)}>
+                              {showPassword ? <EyeSlash weight="duotone" size={14} className="text-muted-foreground" /> : <Eye weight="duotone" size={14} className="text-muted-foreground" />}
+                            </button>
+                            <button onClick={() => handleCopy(selectedItem.serverPassword ?? "", `server-pass-${selectedItem.id}`)}>
+                              {copied === `server-pass-${selectedItem.id}` ? <CheckCircle weight="duotone" size={14} className="text-emerald-500" /> : <Copy weight="duotone" size={14} className="text-muted-foreground" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

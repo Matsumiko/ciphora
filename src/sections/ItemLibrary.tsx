@@ -24,11 +24,16 @@ import {
   Lifebuoy,
   Certificate,
   Database,
+  EnvelopeSimple,
+  Bank,
+  CurrencyBtc,
+  Globe,
+  Cloud,
 } from "@phosphor-icons/react";
 import type { VaultItem } from "./ItemModal";
 import type { TotpState } from "../hooks/useVaultStore";
 
-const filterOptions = ["All", "Password", "TOTP", "Note", "Card", "SSH", "Identity", "API", "Wi-Fi", "Recovery", "License", "Database"];
+const filterOptions = ["All", "Password", "TOTP", "Note", "Card", "SSH", "Identity", "API", "Wi-Fi", "Recovery", "License", "Database", "Email", "Bank", "Crypto", "Domain", "Server"];
 
 const strengthMap: Record<string, { label: string; color: string; bar: string }> = {
   strong: { label: "Strong", color: "text-emerald-400", bar: "bg-emerald-500 w-full" },
@@ -382,6 +387,11 @@ interface ItemLibraryProps {
   recoveryCodes: VaultItem[];
   softwareLicenses: VaultItem[];
   databaseCredentials: VaultItem[];
+  emailAccounts: VaultItem[];
+  bankAccounts: VaultItem[];
+  cryptoWallets: VaultItem[];
+  domainDnsRecords: VaultItem[];
+  serverHostingAccounts: VaultItem[];
   totpStates: Record<number, TotpState>;
   onAddItem: () => void;
   onEditItem: (item: VaultItem) => void;
@@ -404,6 +414,11 @@ export default function ItemLibrary({
   recoveryCodes,
   softwareLicenses,
   databaseCredentials,
+  emailAccounts,
+  bankAccounts,
+  cryptoWallets,
+  domainDnsRecords,
+  serverHostingAccounts,
   totpStates,
   onAddItem,
   onEditItem,
@@ -427,7 +442,7 @@ export default function ItemLibrary({
     if (!v && onClearExternalSearch) onClearExternalSearch();
   };
 
-  const totalItems = passwords.length + totps.length + notes.length + cards.length + sshKeys.length + identities.length + apiKeys.length + wifiNetworks.length + recoveryCodes.length + softwareLicenses.length + databaseCredentials.length;
+  const totalItems = passwords.length + totps.length + notes.length + cards.length + sshKeys.length + identities.length + apiKeys.length + wifiNetworks.length + recoveryCodes.length + softwareLicenses.length + databaseCredentials.length + emailAccounts.length + bankAccounts.length + cryptoWallets.length + domainDnsRecords.length + serverHostingAccounts.length;
   const fmt = (s: number | null) => s === null ? "off" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   const filterPassword = (item: VaultItem) =>
@@ -452,6 +467,16 @@ export default function ItemLibrary({
     !search || [item.softwareName, item.softwareVendor, item.licenseEmail, item.licenseSeats, item.licenseExpiry, item.licenseNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
   const filterDatabaseCredential = (item: VaultItem) =>
     !search || [item.dbName, item.dbEngine, item.dbHost, item.dbDatabase, item.dbUsername, item.dbNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
+  const filterEmailAccount = (item: VaultItem) =>
+    !search || [item.emailAccountName, item.emailAddress, item.emailProvider, item.emailUsername, item.emailRecoveryEmail, item.emailNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
+  const filterBankAccount = (item: VaultItem) =>
+    !search || [item.bankLabel, item.bankName, item.bankAccountHolder, item.bankAccountNumber, item.bankIban, item.bankSwift, item.bankNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
+  const filterCryptoWallet = (item: VaultItem) =>
+    !search || [item.cryptoWalletName, item.cryptoNetwork, item.cryptoPublicAddress, item.cryptoDerivationPath, item.cryptoNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
+  const filterDomainDns = (item: VaultItem) =>
+    !search || [item.domainName, item.domainRegistrar, item.domainDnsProvider, item.domainRenewalEmail, item.domainNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
+  const filterServerHosting = (item: VaultItem) =>
+    !search || [item.serverName, item.serverProvider, item.serverHost, item.serverIp, item.serverUsername, item.serverPanelUrl, item.serverNotes].some((value) => value?.toLowerCase().includes(search.toLowerCase()));
 
   const showPasswords = activeFilter === "All" || activeFilter === "Password";
   const showTOTP = activeFilter === "All" || activeFilter === "TOTP";
@@ -464,6 +489,11 @@ export default function ItemLibrary({
   const showRecoveryCodes = activeFilter === "All" || activeFilter === "Recovery";
   const showSoftwareLicenses = activeFilter === "All" || activeFilter === "License";
   const showDatabaseCredentials = activeFilter === "All" || activeFilter === "Database";
+  const showEmailAccounts = activeFilter === "All" || activeFilter === "Email";
+  const showBankAccounts = activeFilter === "All" || activeFilter === "Bank";
+  const showCryptoWallets = activeFilter === "All" || activeFilter === "Crypto";
+  const showDomainDnsRecords = activeFilter === "All" || activeFilter === "Domain";
+  const showServerHostingAccounts = activeFilter === "All" || activeFilter === "Server";
 
   const filteredPwd = passwords.filter(filterPassword);
   const filteredTotp = totps.filter(filterTotp);
@@ -476,7 +506,12 @@ export default function ItemLibrary({
   const filteredRecoveryCode = recoveryCodes.filter(filterRecoveryCode);
   const filteredSoftwareLicense = softwareLicenses.filter(filterSoftwareLicense);
   const filteredDatabaseCredential = databaseCredentials.filter(filterDatabaseCredential);
-  const noResults = !filteredPwd.length && !filteredTotp.length && !filteredNote.length && !filteredCard.length && !filteredSsh.length && !filteredIdentity.length && !filteredApiKey.length && !filteredWifi.length && !filteredRecoveryCode.length && !filteredSoftwareLicense.length && !filteredDatabaseCredential.length;
+  const filteredEmailAccount = emailAccounts.filter(filterEmailAccount);
+  const filteredBankAccount = bankAccounts.filter(filterBankAccount);
+  const filteredCryptoWallet = cryptoWallets.filter(filterCryptoWallet);
+  const filteredDomainDns = domainDnsRecords.filter(filterDomainDns);
+  const filteredServerHosting = serverHostingAccounts.filter(filterServerHosting);
+  const noResults = !filteredPwd.length && !filteredTotp.length && !filteredNote.length && !filteredCard.length && !filteredSsh.length && !filteredIdentity.length && !filteredApiKey.length && !filteredWifi.length && !filteredRecoveryCode.length && !filteredSoftwareLicense.length && !filteredDatabaseCredential.length && !filteredEmailAccount.length && !filteredBankAccount.length && !filteredCryptoWallet.length && !filteredDomainDns.length && !filteredServerHosting.length;
 
   return (
     <section className="bg-background min-h-screen py-8 px-4 md:px-8 relative">
@@ -762,6 +797,151 @@ export default function ItemLibrary({
                   secretLabel={item.dbConnectionUrl ? "Connection URL" : "Password"}
                   secretValue={item.dbConnectionUrl || item.dbPassword}
                   accent="bg-border group-hover:bg-indigo-400"
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Email Accounts */}
+        {showEmailAccounts && filteredEmailAccount.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <EnvelopeSimple size={13} weight="duotone" className="text-muted-foreground" />
+              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">Email Accounts</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-mono text-muted-foreground">{filteredEmailAccount.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredEmailAccount.map(item => (
+                <SecretItemCard
+                  key={item.id}
+                  item={item}
+                  icon={EnvelopeSimple}
+                  title={item.emailAccountName ?? item.emailAddress ?? "Email Account"}
+                  subtitle={[item.emailAddress, item.emailProvider].filter(Boolean).join(" - ") || "Mailbox access"}
+                  badge="MAIL"
+                  secretLabel="Password"
+                  secretValue={item.emailPassword}
+                  accent="bg-border group-hover:bg-rose-400"
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bank Accounts */}
+        {showBankAccounts && filteredBankAccount.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Bank size={13} weight="duotone" className="text-muted-foreground" />
+              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">Bank Accounts</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-mono text-muted-foreground">{filteredBankAccount.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredBankAccount.map(item => (
+                <SecretItemCard
+                  key={item.id}
+                  item={item}
+                  icon={Bank}
+                  title={item.bankLabel ?? item.bankName ?? "Bank Account"}
+                  subtitle={[item.bankName, item.bankAccountHolder].filter(Boolean).join(" - ") || item.bankIban || "Bank details"}
+                  badge="BANK"
+                  secretLabel={item.bankPin ? "PIN / Access Code" : "Account Number"}
+                  secretValue={item.bankPin || item.bankAccountNumber || item.bankIban}
+                  accent="bg-border group-hover:bg-teal-400"
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Crypto Wallets */}
+        {showCryptoWallets && filteredCryptoWallet.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <CurrencyBtc size={13} weight="duotone" className="text-muted-foreground" />
+              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">Crypto Wallets</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-mono text-muted-foreground">{filteredCryptoWallet.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredCryptoWallet.map(item => (
+                <SecretItemCard
+                  key={item.id}
+                  item={item}
+                  icon={CurrencyBtc}
+                  title={item.cryptoWalletName ?? "Crypto Wallet"}
+                  subtitle={[item.cryptoNetwork, item.cryptoPublicAddress].filter(Boolean).join(" - ") || "Seed / private key"}
+                  badge="SEED"
+                  secretLabel={item.cryptoSeedPhrase ? "Seed Phrase" : "Private Key"}
+                  secretValue={item.cryptoSeedPhrase || item.cryptoPrivateKey}
+                  accent="bg-border group-hover:bg-yellow-400"
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Domain / DNS */}
+        {showDomainDnsRecords && filteredDomainDns.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Globe size={13} weight="duotone" className="text-muted-foreground" />
+              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">Domain / DNS</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-mono text-muted-foreground">{filteredDomainDns.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredDomainDns.map(item => (
+                <SecretItemCard
+                  key={item.id}
+                  item={item}
+                  icon={Globe}
+                  title={item.domainName ?? "Domain"}
+                  subtitle={[item.domainRegistrar, item.domainDnsProvider, item.domainExpires].filter(Boolean).join(" - ") || "DNS profile"}
+                  badge="DNS"
+                  secretLabel={item.domainEppCode ? "EPP / Auth Code" : "Nameservers"}
+                  secretValue={item.domainEppCode || item.domainNameservers}
+                  accent="bg-border group-hover:bg-fuchsia-400"
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Server / Hosting */}
+        {showServerHostingAccounts && filteredServerHosting.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Cloud size={13} weight="duotone" className="text-muted-foreground" />
+              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">Server / Hosting</span>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-mono text-muted-foreground">{filteredServerHosting.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredServerHosting.map(item => (
+                <SecretItemCard
+                  key={item.id}
+                  item={item}
+                  icon={Cloud}
+                  title={item.serverName ?? "Server / Hosting"}
+                  subtitle={[item.serverProvider, item.serverHost || item.serverIp, item.serverUsername].filter(Boolean).join(" - ") || "Hosting access"}
+                  badge="SRV"
+                  secretLabel={item.serverPassword ? "Password" : "Panel URL"}
+                  secretValue={item.serverPassword || item.serverPanelUrl}
+                  accent="bg-border group-hover:bg-slate-400"
                   onEdit={onEditItem}
                   onDelete={onDeleteItem}
                 />

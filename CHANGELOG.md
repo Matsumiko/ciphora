@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.2
+
+- Added first-class vault item types for Email Account, Bank Account, Crypto Wallet / Seed, Domain / DNS, and Server / Hosting Account.
+- Added Library filters/sections, Generator detail panels, Dashboard counts, encrypted sync retention, and browser regression coverage for the new item types.
+- Added local Security Audit heuristics for bank PIN storage, crypto seed/private key handling, domain expiry, and privileged server usernames.
+
 ## v1.3.1
 
 - Published release-signed Android APK/AAB assets for the stable `in.indevs.ciphora` Android application ID.

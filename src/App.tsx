@@ -650,6 +650,11 @@ function AppInner() {
   const recoveryCodes = localItems.filter((item) => item.type === "recoveryCode");
   const softwareLicenses = localItems.filter((item) => item.type === "softwareLicense");
   const databaseCredentials = localItems.filter((item) => item.type === "databaseCredential");
+  const emailAccounts = localItems.filter((item) => item.type === "emailAccount");
+  const bankAccounts = localItems.filter((item) => item.type === "bankAccount");
+  const cryptoWallets = localItems.filter((item) => item.type === "cryptoWallet");
+  const domainDnsRecords = localItems.filter((item) => item.type === "domainDns");
+  const serverHostingAccounts = localItems.filter((item) => item.type === "serverHosting");
   const totpStateKey = totps
     .map((item) => `${item.id}:${item.secret ?? ""}`)
     .join("|");
@@ -2708,6 +2713,53 @@ function AppInner() {
       dbPassword: item.dbPassword,
       dbConnectionUrl: item.dbConnectionUrl,
       dbNotes: item.dbNotes,
+      emailAccountName: item.emailAccountName,
+      emailAddress: item.emailAddress,
+      emailProvider: item.emailProvider,
+      emailUsername: item.emailUsername,
+      emailPassword: item.emailPassword,
+      emailRecoveryEmail: item.emailRecoveryEmail,
+      emailRecoveryPhone: item.emailRecoveryPhone,
+      emailImapHost: item.emailImapHost,
+      emailSmtpHost: item.emailSmtpHost,
+      emailNotes: item.emailNotes,
+      bankLabel: item.bankLabel,
+      bankName: item.bankName,
+      bankAccountHolder: item.bankAccountHolder,
+      bankAccountNumber: item.bankAccountNumber,
+      bankRoutingNumber: item.bankRoutingNumber,
+      bankSwift: item.bankSwift,
+      bankIban: item.bankIban,
+      bankBranch: item.bankBranch,
+      bankPin: item.bankPin,
+      bankLoginUrl: item.bankLoginUrl,
+      bankNotes: item.bankNotes,
+      cryptoWalletName: item.cryptoWalletName,
+      cryptoNetwork: item.cryptoNetwork,
+      cryptoPublicAddress: item.cryptoPublicAddress,
+      cryptoSeedPhrase: item.cryptoSeedPhrase,
+      cryptoPrivateKey: item.cryptoPrivateKey,
+      cryptoDerivationPath: item.cryptoDerivationPath,
+      cryptoHardwareWallet: item.cryptoHardwareWallet,
+      cryptoNotes: item.cryptoNotes,
+      domainName: item.domainName,
+      domainRegistrar: item.domainRegistrar,
+      domainDnsProvider: item.domainDnsProvider,
+      domainNameservers: item.domainNameservers,
+      domainExpires: item.domainExpires,
+      domainRenewalEmail: item.domainRenewalEmail,
+      domainEppCode: item.domainEppCode,
+      domainNotes: item.domainNotes,
+      serverName: item.serverName,
+      serverProvider: item.serverProvider,
+      serverHost: item.serverHost,
+      serverIp: item.serverIp,
+      serverUsername: item.serverUsername,
+      serverPassword: item.serverPassword,
+      serverPanelUrl: item.serverPanelUrl,
+      serverSshReference: item.serverSshReference,
+      serverExpires: item.serverExpires,
+      serverNotes: item.serverNotes,
     };
     const itemName = item.site
       ?? item.issuer
@@ -2721,6 +2773,13 @@ function AppInner() {
       ?? item.recoveryName
       ?? item.softwareName
       ?? item.dbName
+      ?? item.emailAccountName
+      ?? item.emailAddress
+      ?? item.bankLabel
+      ?? item.bankName
+      ?? item.cryptoWalletName
+      ?? item.domainName
+      ?? item.serverName
       ?? "Item";
 
     try {
@@ -3026,6 +3085,11 @@ function AppInner() {
                   recoveryCodes={recoveryCodes}
                   softwareLicenses={softwareLicenses}
                   databaseCredentials={databaseCredentials}
+                  emailAccounts={emailAccounts}
+                  bankAccounts={bankAccounts}
+                  cryptoWallets={cryptoWallets}
+                  domainDnsRecords={domainDnsRecords}
+                  serverHostingAccounts={serverHostingAccounts}
                   activities={activities}
                   autoLockSeconds={autoLockSeconds}
                   autoLockDurationSeconds={autoLockDurationSeconds}
@@ -3052,6 +3116,11 @@ function AppInner() {
                   recoveryCodes={recoveryCodes}
                   softwareLicenses={softwareLicenses}
                   databaseCredentials={databaseCredentials}
+                  emailAccounts={emailAccounts}
+                  bankAccounts={bankAccounts}
+                  cryptoWallets={cryptoWallets}
+                  domainDnsRecords={domainDnsRecords}
+                  serverHostingAccounts={serverHostingAccounts}
                   totpStates={totpStates}
                   onAddItem={handleOpenAdd}
                   onEditItem={handleOpenEdit}
@@ -3079,6 +3148,11 @@ function AppInner() {
                   recoveryCodes={recoveryCodes}
                   softwareLicenses={softwareLicenses}
                   databaseCredentials={databaseCredentials}
+                  emailAccounts={emailAccounts}
+                  bankAccounts={bankAccounts}
+                  cryptoWallets={cryptoWallets}
+                  domainDnsRecords={domainDnsRecords}
+                  serverHostingAccounts={serverHostingAccounts}
                   totpStates={totpStates}
                   onEditItem={handleOpenEdit}
                   onDeleteItem={handleDeleteRequest}
@@ -3097,6 +3171,10 @@ function AppInner() {
                   recoveryCodes={recoveryCodes}
                   softwareLicenses={softwareLicenses}
                   databaseCredentials={databaseCredentials}
+                  bankAccounts={bankAccounts}
+                  cryptoWallets={cryptoWallets}
+                  domainDnsRecords={domainDnsRecords}
+                  serverHostingAccounts={serverHostingAccounts}
                   onEditItem={handleOpenEdit}
                   onDeleteItem={handleDeleteRequest}
                   onNavigate={handleNavigate}
