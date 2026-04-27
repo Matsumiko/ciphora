@@ -4,7 +4,7 @@
   "version": "1.3.3",
   "versionCode": 1003003,
   "tag": "v1.3.3",
-  "releasedAt": "2026-04-27T16:40:00Z",
+  "releasedAt": "2026-04-27T18:31:46Z",
   "mandatory": false,
   "minimumSupportedVersion": "1.3.1",
   "title": "Ciphora v1.3.3",
@@ -17,8 +17,8 @@
     "android": {
       "apkUrl": "https://github.com/Matsumiko/ciphora/releases/download/v1.3.3/ciphora_1.3.3_android.apk",
       "aabUrl": "https://github.com/Matsumiko/ciphora/releases/download/v1.3.3/ciphora_1.3.3_android.aab",
-      "sha256Apk": null,
-      "sha256Aab": null
+      "sha256Apk": "e5a15c0d776c818ed3fd409a4029e06c16ef3a4b09350f7a0ffbd6a306eda58f",
+      "sha256Aab": "0308ee3b97a51a42d46ea887769445a8e1a0a7345233197719a42b24bded6e62"
     }
   }
 }
