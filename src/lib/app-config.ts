@@ -1,8 +1,11 @@
 export const APP_NAME = "Ciphora";
 export const APP_NAME_UPPER = "CIPHORA";
-export const APP_VERSION = "v1.3";
+export const APP_RELEASE_VERSION = "1.3.3";
+export const APP_VERSION = `v${APP_RELEASE_VERSION}`;
+export const APP_ANDROID_VERSION_CODE = 1003003;
 export const APP_HOSTNAME = "app.ciphora.local";
 export const APP_PUBLIC_URL = "https://app.ciphora.indevs.in";
+export const APP_UPDATE_MANIFEST_URL = `${APP_PUBLIC_URL}/releases/latest.json`;
 export const APP_DESCRIPTION = "Ciphora is an encrypted local-first vault for passwords, TOTP codes, secure notes, recovery data, and user-owned sync.";
 export const BRAND_MARK_SRC = "/brand/ciphora-mark.svg";
 export const BRAND_WORDMARK_SRC = "/brand/ciphora-wordmark.svg";
@@ -59,6 +62,12 @@ export const STORAGE_KEYS = {
   },
   accountDeviceId: {
     current: "ciphora_account_device_id_v1",
+  },
+  appUpdateLastCheckAt: {
+    current: "ciphora_update_last_check_at_v1",
+  },
+  appUpdateSnoozedUntil: {
+    current: "ciphora_update_snoozed_until_v1",
   },
 } satisfies Record<string, StorageKeySet>;
 

@@ -5,6 +5,7 @@ import VaultTopbar from "./sections/VaultTopbar";
 import MobileBottomNav from "./sections/MobileBottomNav";
 import ItemModal from "./sections/ItemModal";
 import DeleteConfirm from "./sections/DeleteConfirm";
+import AppUpdatePrompt from "./components/AppUpdatePrompt";
 import { ToastProvider, useToast } from "./components/Toast";
 import { STORAGE_KEYS, EXPORT_FILE_PREFIX, readStorageValue, removeStorageValue, resetCiphoraBrowserStorage, writeStorageValue } from "./lib/app-config";
 import {
@@ -3236,6 +3237,7 @@ function AppInner() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+      <AppUpdatePrompt />
     </>
   );
 }

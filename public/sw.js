@@ -1,4 +1,4 @@
-const CIPHORA_SW_VERSION = "ciphora-sw-v1.3.0";
+const CIPHORA_SW_VERSION = "ciphora-sw-v1.3.3";
 const APP_SHELL_CACHE = `${CIPHORA_SW_VERSION}-app-shell`;
 const RUNTIME_CACHE = `${CIPHORA_SW_VERSION}-runtime`;
 
@@ -36,6 +36,7 @@ self.addEventListener("activate", (event) => {
 function shouldBypass(requestUrl) {
   return requestUrl.pathname.startsWith("/api/")
     || requestUrl.pathname.startsWith("/cdn-cgi/")
+    || requestUrl.pathname === "/releases/latest.json"
     || requestUrl.pathname.startsWith("/__");
 }
 

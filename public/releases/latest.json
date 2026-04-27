@@ -1,0 +1,24 @@
+{
+  "schema": "ciphora-release-v1",
+  "channel": "stable",
+  "version": "1.3.3",
+  "versionCode": 1003003,
+  "tag": "v1.3.3",
+  "releasedAt": "2026-04-27T16:40:00Z",
+  "mandatory": false,
+  "minimumSupportedVersion": "1.3.1",
+  "title": "Ciphora v1.3.3",
+  "notes": [
+    "Adds Android APK update checking for manually installed release builds.",
+    "Shows an in-app update prompt and opens the release-signed APK download with Android install confirmation.",
+    "Keeps the stable Android package id and release signing track for update installs."
+  ],
+  "platforms": {
+    "android": {
+      "apkUrl": "https://github.com/Matsumiko/ciphora/releases/download/v1.3.3/ciphora_1.3.3_android.apk",
+      "aabUrl": "https://github.com/Matsumiko/ciphora/releases/download/v1.3.3/ciphora_1.3.3_android.aab",
+      "sha256Apk": null,
+      "sha256Aab": null
+    }
+  }
+}

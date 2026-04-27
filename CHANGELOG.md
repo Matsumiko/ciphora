@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.3
+
+- Added Android APK update checking for manually installed release builds.
+- Added a production release manifest at `/releases/latest.json` with no-store/CORS headers.
+- Added an in-app Android update prompt that opens the release-signed APK download while keeping Android install confirmation.
+
 ## v1.3.2
 
 - Added first-class vault item types for Email Account, Bank Account, Crypto Wallet / Seed, Domain / DNS, and Server / Hosting Account.

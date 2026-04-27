@@ -16,7 +16,7 @@ def envOrProperty(String envName, String propertyName = null) {
     return null
 }
 
-def defaultVersionName = "1.3.0"
+def defaultVersionName = "1.3.3"
 def resolvedVersionName = envOrProperty("CIPHORA_ANDROID_VERSION_NAME", "ciphoraAndroidVersionName") ?: defaultVersionName
 
 def semverVersionCode(String versionName) {
