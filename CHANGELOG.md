@@ -4,6 +4,7 @@
 
 - Fixed auto-sync pending delete handling so local-only/orphan deletes do not keep provider sync stuck in a repeated pending state.
 - Auto-sync now pauses when unresolved BYODB conflicts need user review instead of retrying conflict pushes repeatedly.
+- Auto-sync now reads encrypted vault snapshots without triggering the global loading screen, pulls on unlocked app open/focus, and dedupes automatic push attempts for unchanged pending local state.
 
 ## v1.3.3
 
@@ -31,4 +32,3 @@
 - Android users who installed an older debug-signed APK may need one uninstall before moving to the release-signed update track.
 - Windows and Linux desktop bundles are currently unsigned.
 - Independent cryptographic review remains pending.
-

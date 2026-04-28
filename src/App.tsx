@@ -44,7 +44,8 @@ import { pullVaultSnapshotFromD1Bridge, pushVaultSnapshotToD1Bridge, resolveD1Br
 import { pullVaultSnapshotFromD1Direct, pushVaultSnapshotToD1Direct, resolveD1DirectSyncConflict } from "./lib/d1-direct-sync";
 import { testSyncProviderConnection } from "./lib/sync-provider-client";
 import type { SyncConflictResolution } from "./lib/sync-conflict-resolution";
-import { buildSyncStatusSummary, hasPendingLocalSync, type AutoSyncRuntimeState } from "./lib/sync-status";
+import { getItemModifiedMs, getManualSyncRecordId } from "./lib/manual-vault-sync-core";
+import { buildSyncStatusSummary, hasPendingLocalSync, type AutoSyncRuntimeState, type SyncStatusSummary } from "./lib/sync-status";
 import { pullVaultSnapshotFromTurso, pushVaultSnapshotToTurso, resolveTursoSyncConflict } from "./lib/turso-vault-sync";
 import { getDefaultVaultPath, getPathForPanel, getScreenFromPath, isVaultPanel, ROUTE_PATHS, type VaultPanel } from "./lib/routes";
 import { useI18n } from "./lib/i18n";
@@ -216,6 +217,38 @@ function shouldPullBeforePush(syncProfile: SyncProfile, vaultData: VaultData) {
   }
 
   return Date.now() - lastRemoteRefreshMs >= PRE_PUSH_PULL_STALE_MS;
+}
+
+function buildAutoPushSignature(input: {
+  syncProfile: SyncProfile | null;
+  syncStatusSummary: SyncStatusSummary;
+  syncState: VaultSyncState;
+  items: VaultItem[];
+}) {
+  if (!input.syncProfile) {
+    return "no-sync-profile";
+  }
+
+  const itemFingerprint = input.items
+    .map((item) => `${getManualSyncRecordId(item)}:${getItemModifiedMs(item)}`)
+    .sort()
+    .join("|");
+  const deleteFingerprint = input.syncState.pendingLocalDeletes
+    .map((entry) => `${entry.recordId}:${entry.deletedAt}`)
+    .sort()
+    .join("|");
+
+  return [
+    input.syncProfile.providerType,
+    input.syncProfile.profileId,
+    input.syncStatusSummary.pendingLocalItemCount,
+    input.syncStatusSummary.pendingLocalDeleteCount,
+    input.syncStatusSummary.unresolvedConflictCount,
+    input.syncStatusSummary.lastPulledAt ?? "",
+    input.syncStatusSummary.lastMergedAt ?? "",
+    itemFingerprint,
+    deleteFingerprint,
+  ].join("::");
 }
 
 function buildDisconnectCleanupVaultData(syncProfile: SyncProfile, vaultData: VaultData, deletedAt: string) {
@@ -431,6 +464,7 @@ function AppInner() {
     isPending: itemsPending,
     error: vaultError,
     refreshVault,
+    readVaultSnapshot,
     createItem,
     updateItem,
     removeItem,
@@ -462,7 +496,9 @@ function AppInner() {
   const [autoSyncRuntime, setAutoSyncRuntime] = useState<AutoSyncRuntimeState>(() => createAutoSyncRuntimeState(readAutoSyncEnabled()));
   const syncActionLockRef = useRef<null | { action: "push" | "pull" | "disconnect" | "migrate" | "resolve"; trigger: "manual" | "auto" }>(null);
   const autoPushTimerRef = useRef<number | null>(null);
+  const autoPushSignatureRef = useRef<string | null>(null);
   const autoPullCooldownRef = useRef(0);
+  const autoPullOpenKeyRef = useRef<string | null>(null);
   const syncStatusSummary = buildSyncStatusSummary({
     syncProfile,
     syncState: vaultSyncState,
@@ -471,6 +507,15 @@ function AppInner() {
   });
   const hasAutoSyncPrerequisites = !!sessionKeyState && !!accountSession && !!syncProfile;
   const hasPendingLocalAutoSync = hasPendingLocalSync(syncStatusSummary) && syncStatusSummary.unresolvedConflictCount === 0;
+  const autoPushSignature = buildAutoPushSignature({
+    syncProfile,
+    syncStatusSummary,
+    syncState: vaultSyncState,
+    items: localItems,
+  });
+  const autoPullOpenKey = sessionKeyState && accountSession && syncProfile
+    ? `${accountSession.user.userId}:${syncProfile.providerType}:${syncProfile.profileId}`
+    : "";
 
   const refreshPinState = useCallback(() => {
     if (!hasWindow()) {
@@ -1333,7 +1378,7 @@ function AppInner() {
     };
 
     try {
-      const currentVaultData = await refreshVault();
+      const currentVaultData = await readVaultSnapshot();
       if (!currentVaultData) {
         return { ok: false, message: "Vault lokal tidak bisa dimuat untuk migrasi provider." };
       }
@@ -1477,7 +1522,7 @@ function AppInner() {
     } finally {
       syncActionLockRef.current = null;
     }
-  }, [accountSession, autoSyncEnabled, clearAutoPushTimer, logActivity, refreshVault, replaceVault, sessionKey, syncProfile, toast]);
+  }, [accountSession, autoSyncEnabled, clearAutoPushTimer, logActivity, readVaultSnapshot, replaceVault, sessionKey, syncProfile, toast]);
 
   const handleSetAutoSyncEnabled = useCallback((enabled: boolean) => {
     setAutoSyncEnabled(enabled);
@@ -1602,7 +1647,7 @@ function AppInner() {
     }
 
     try {
-      const currentVaultData = await refreshVault();
+      const currentVaultData = await readVaultSnapshot();
       if (!currentVaultData) {
         const message = "Vault lokal tidak bisa dimuat untuk sinkronisasi.";
         if (input.trigger === "auto" && autoSyncEnabled) {
@@ -1904,7 +1949,7 @@ function AppInner() {
     } finally {
       syncActionLockRef.current = null;
     }
-  }, [accountSession, autoSyncEnabled, clearAutoPushTimer, isAutoSyncViewportActive, logActivity, refreshVault, replaceVault, sessionKey, syncProfile, toast]);
+  }, [accountSession, autoSyncEnabled, clearAutoPushTimer, isAutoSyncViewportActive, logActivity, readVaultSnapshot, replaceVault, sessionKey, syncProfile, toast]);
 
   const handleResolveSyncConflict = useCallback(async (input: {
     conflictId: string;
@@ -2120,16 +2165,26 @@ function AppInner() {
   ]);
 
   useEffect(() => {
-    if (!autoSyncEnabled || !hasAutoSyncPrerequisites || !isAutoSyncViewportActive) {
+    if (!autoSyncEnabled || !hasAutoSyncPrerequisites || !isAutoSyncViewportActive || !autoPullOpenKey) {
+      if (!hasAutoSyncPrerequisites) {
+        autoPullOpenKeyRef.current = null;
+      }
       return;
     }
 
-    maybeRunAutoPull("app-focus");
-  }, [autoSyncEnabled, hasAutoSyncPrerequisites, isAutoSyncViewportActive, maybeRunAutoPull, syncProfile?.profileId]);
+    const reason = autoPullOpenKeyRef.current === autoPullOpenKey ? "app-focus" : "app-open";
+    autoPullOpenKeyRef.current = autoPullOpenKey;
+    maybeRunAutoPull(reason);
+  }, [autoPullOpenKey, autoSyncEnabled, hasAutoSyncPrerequisites, isAutoSyncViewportActive, maybeRunAutoPull]);
 
   useEffect(() => {
     if (!autoSyncEnabled || !hasAutoSyncPrerequisites || !isAutoSyncViewportActive || !hasPendingLocalAutoSync) {
+      autoPushSignatureRef.current = null;
       clearAutoPushTimer();
+      return undefined;
+    }
+
+    if (autoPushSignatureRef.current === autoPushSignature) {
       return undefined;
     }
 
@@ -2144,6 +2199,7 @@ function AppInner() {
     clearAutoPushTimer();
     autoPushTimerRef.current = window.setTimeout(() => {
       autoPushTimerRef.current = null;
+      autoPushSignatureRef.current = autoPushSignature;
       void runProviderSync({
         action: "push",
         trigger: "auto",
@@ -2161,11 +2217,7 @@ function AppInner() {
     hasPendingLocalAutoSync,
     isAutoSyncViewportActive,
     runProviderSync,
-    syncStatusSummary.lastMergedAt,
-    syncStatusSummary.lastPulledAt,
-    syncStatusSummary.lastPushedAt,
-    syncStatusSummary.pendingLocalDeleteCount,
-    syncStatusSummary.pendingLocalItemCount,
+    autoPushSignature,
   ]);
 
   const handleLock = useCallback(() => {

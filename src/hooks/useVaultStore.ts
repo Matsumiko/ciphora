@@ -248,6 +248,22 @@ export function useVaultStore(sessionKey: string | null) {
     }
   }, [sessionKey, syncState]);
 
+  const readVaultSnapshot = useCallback(async () => {
+    if (!hasWindow() || !sessionKey) {
+      return null;
+    }
+
+    try {
+      const data = normalizeVaultData(await loadVaultData(window.localStorage, sessionKey));
+      setError(null);
+      return data;
+    } catch (caughtError) {
+      const nextError = caughtError instanceof Error ? caughtError : new Error("Failed to load encrypted vault.");
+      setError(nextError);
+      return null;
+    }
+  }, [sessionKey]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -408,6 +424,7 @@ export function useVaultStore(sessionKey: string | null) {
     isPending,
     error,
     refreshVault,
+    readVaultSnapshot,
     createItem,
     updateItem,
     removeItem,
