@@ -489,6 +489,29 @@ export function mergeVaultSyncConflicts(existing: VaultSyncConflict[], nextConfl
     .slice(0, 128);
 }
 
+export function getActionablePendingLocalDeletes(
+  pendingLocalDeletes: VaultDeletedRecord[],
+  knownRemoteRecords: VaultKnownRemoteRecord[],
+) {
+  const knownActiveRemoteIds = new Set(
+    knownRemoteRecords
+      .filter((record) => record.deletedAt === null)
+      .map((record) => record.recordId),
+  );
+
+  return pendingLocalDeletes.filter((entry) => knownActiveRemoteIds.has(entry.recordId));
+}
+
+export function hasKnownActiveRemoteRecord(syncState: VaultSyncState, recordId: string) {
+  return [
+    syncState.turso,
+    syncState.d1Bridge,
+    syncState.d1Direct,
+  ].some((providerState) =>
+    providerState?.knownRemoteRecords.some((record) => record.recordId === recordId && record.deletedAt === null),
+  );
+}
+
 export function hasConfiguredVault(storage: Storage) {
   return !!readStorageValue(storage, STORAGE_KEYS.vaultAuth) && !!readStorageValue(storage, STORAGE_KEYS.vaultEnvelope);
 }

@@ -59,6 +59,7 @@ import {
   createEncryptedBackupFile,
   createVaultActivity,
   generateVaultId,
+  getActionablePendingLocalDeletes,
   hasConfiguredVault,
   hasQuickUnlockPin,
   initializeEncryptedVault,
@@ -195,12 +196,12 @@ function getActiveProviderSyncState(syncProfile: SyncProfile, syncState: VaultSy
 }
 
 function shouldPullBeforePush(syncProfile: SyncProfile, vaultData: VaultData) {
-  if (vaultData.syncState.pendingLocalDeletes.length > 0) {
+  const providerState = getActiveProviderSyncState(syncProfile, vaultData.syncState);
+  if (!providerState) {
     return true;
   }
 
-  const providerState = getActiveProviderSyncState(syncProfile, vaultData.syncState);
-  if (!providerState) {
+  if (getActionablePendingLocalDeletes(vaultData.syncState.pendingLocalDeletes, providerState.knownRemoteRecords).length > 0) {
     return true;
   }
 
@@ -469,7 +470,7 @@ function AppInner() {
     autoSyncEnabled,
   });
   const hasAutoSyncPrerequisites = !!sessionKeyState && !!accountSession && !!syncProfile;
-  const hasPendingLocalAutoSync = hasPendingLocalSync(syncStatusSummary);
+  const hasPendingLocalAutoSync = hasPendingLocalSync(syncStatusSummary) && syncStatusSummary.unresolvedConflictCount === 0;
 
   const refreshPinState = useCallback(() => {
     if (!hasWindow()) {
@@ -2078,6 +2079,20 @@ function AppInner() {
       return;
     }
 
+    if (syncStatusSummary.unresolvedConflictCount > 0) {
+      clearAutoPushTimer();
+      setAutoSyncRuntime((currentValue) => currentValue.status === "syncing"
+        ? currentValue
+        : {
+          enabled: true,
+          status: "paused",
+          message: "Auto sync berhenti karena ada konflik remote yang perlu direview.",
+          lastAction: currentValue.lastAction,
+          lastActionAt: currentValue.lastActionAt,
+        });
+      return;
+    }
+
     setAutoSyncRuntime((currentValue) => {
       if (currentValue.status === "syncing" || currentValue.status === "scheduled" || currentValue.status === "error") {
         return currentValue;
@@ -2095,7 +2110,14 @@ function AppInner() {
         lastActionAt: currentValue.lastActionAt,
       };
     });
-  }, [autoSyncEnabled, clearAutoPushTimer, hasAutoSyncPrerequisites, hasPendingLocalAutoSync, isAutoSyncViewportActive]);
+  }, [
+    autoSyncEnabled,
+    clearAutoPushTimer,
+    hasAutoSyncPrerequisites,
+    hasPendingLocalAutoSync,
+    isAutoSyncViewportActive,
+    syncStatusSummary.unresolvedConflictCount,
+  ]);
 
   useEffect(() => {
     if (!autoSyncEnabled || !hasAutoSyncPrerequisites || !isAutoSyncViewportActive) {

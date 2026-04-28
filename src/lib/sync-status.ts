@@ -1,7 +1,7 @@
 import type { SyncProfile, SyncProviderType } from "./account-client";
 import { getItemModifiedMs, getManualSyncRecordId } from "./manual-vault-sync-core";
 import { getSyncProviderDisplayLabel, isBridgeSyncProvider } from "./sync-providers";
-import type { VaultKnownRemoteRecord, VaultSyncConflict, VaultSyncState } from "./vault-storage";
+import { getActionablePendingLocalDeletes, type VaultKnownRemoteRecord, type VaultSyncConflict, type VaultSyncState } from "./vault-storage";
 import type { VaultItem } from "../sections/ItemModal";
 
 type SyncStatusTone = "neutral" | "warning" | "success";
@@ -145,7 +145,7 @@ export function buildSyncStatusSummary(input: {
   const knownRemoteRecords = providerState?.knownRemoteRecords ?? [];
   const remoteActiveCount = knownRemoteRecords.filter((record) => record.deletedAt === null).length;
   const remoteTombstoneCount = knownRemoteRecords.filter((record) => record.deletedAt !== null).length;
-  const pendingLocalDeleteCount = input.syncState.pendingLocalDeletes.length;
+  const pendingLocalDeleteCount = getActionablePendingLocalDeletes(input.syncState.pendingLocalDeletes, knownRemoteRecords).length;
   const pendingLocalItemCount = countPendingLocalItems(input.items, knownRemoteRecords);
   const pendingTotal = pendingLocalItemCount + pendingLocalDeleteCount;
   const hasSyncHistory = !!providerState?.lastPushedAt || !!providerState?.lastPulledAt || !!providerState?.lastMergedAt || knownRemoteRecords.length > 0;

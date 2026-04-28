@@ -4,6 +4,7 @@ import {
   createEmptyVaultData,
   createVaultActivity,
   generateVaultId,
+  hasKnownActiveRemoteRecord,
   loadVaultData,
   saveVaultData,
   type VaultActivity,
@@ -356,10 +357,12 @@ export function useVaultStore(sessionKey: string | null) {
         syncState: deletedRecordId
           ? {
             ...current.syncState,
-            pendingLocalDeletes: mergePendingDelete(current.syncState.pendingLocalDeletes, {
-              recordId: deletedRecordId,
-              deletedAt: timestamp,
-            }),
+            pendingLocalDeletes: hasKnownActiveRemoteRecord(current.syncState, deletedRecordId)
+              ? mergePendingDelete(current.syncState.pendingLocalDeletes, {
+                recordId: deletedRecordId,
+                deletedAt: timestamp,
+              })
+              : removePendingDelete(current.syncState.pendingLocalDeletes, deletedRecordId),
           }
           : current.syncState,
       };

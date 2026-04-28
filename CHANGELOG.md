@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed auto-sync pending delete handling so local-only/orphan deletes do not keep provider sync stuck in a repeated pending state.
+- Auto-sync now pauses when unresolved BYODB conflicts need user review instead of retrying conflict pushes repeatedly.
+
 ## v1.3.3
 
 - Added Android APK update checking for manually installed release builds.
@@ -26,3 +31,4 @@
 - Android users who installed an older debug-signed APK may need one uninstall before moving to the release-signed update track.
 - Windows and Linux desktop bundles are currently unsigned.
 - Independent cryptographic review remains pending.
+
