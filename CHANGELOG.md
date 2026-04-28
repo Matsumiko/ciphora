@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added `EXTERNAL-CRYPTO-REVIEW.md` as the public-safe external cryptographic review readiness packet and linked it from security/OPAQUE documentation.
 - Fixed auto-sync pending delete handling so local-only/orphan deletes do not keep provider sync stuck in a repeated pending state.
 - Auto-sync now pauses when unresolved BYODB conflicts need user review instead of retrying conflict pushes repeatedly.
 - Auto-sync now reads encrypted vault snapshots without triggering the global loading screen, pulls on unlocked app open/focus, and dedupes automatic push attempts for unchanged pending local state.

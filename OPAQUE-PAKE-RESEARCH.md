@@ -76,6 +76,8 @@ Do not store plaintext setup private keys in D1. Worker secret storage, encrypte
 
 ## External Audit Package
 
+The canonical sendable review packet now lives in `EXTERNAL-CRYPTO-REVIEW.md`. Keep this section as the OPAQUE-specific summary only.
+
 Prepare these artifacts before review:
 
 - Threat model: local-first encrypted vault, Ciphora internal DB, BYODB Turso/D1 Bridge, recovery, and session cookies.

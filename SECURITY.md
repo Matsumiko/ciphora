@@ -10,6 +10,8 @@ Do not include plaintext vault data, recovery keys, private keys, account passwo
 
 Ciphora includes internal security hardening for local vault encryption, account authentication, recovery flows, sync-profile handling, and BYODB sync conflict handling. The project has not completed an independent third-party cryptographic audit or formal OWASP ASVS certification.
 
+The public-safe external review readiness packet is available in `EXTERNAL-CRYPTO-REVIEW.md`. It defines the intended review scope, evidence inventory, claims policy, and public sign-off gate, but it is not an audit result.
+
 Security-sensitive claims should stay precise:
 
 - Acceptable: "local-first encrypted vault", "OPAQUE-backed account login foundation", "BYODB sync support".
